@@ -340,7 +340,7 @@ There is a series of mappings for common TypeScript settings, these are settings
 <td><code><a href='/tsconfig/#baseUrl'>--baseUrl</a></code></td>
 </tr>
 <tr class="option-description even"><td colspan="3">
-<p>Specify the base directory to resolve non-relative module names.</p>
+<p>Specify the base directory to resolve bare specifier module names.</p>
 
 </tr></td>
 <tr class='odd' name='declarationDir'>
@@ -593,4 +593,4 @@ This should give you all the editing support, but not the build when you hit F5.
 ### TypeScriptEnableIncrementalMSBuild (TypeScript 4.2 Beta and later)
 
 By default, MSBuild will attempt to only run the TypeScript compiler when the project's source files have been updated since the last compilation.
-However, if this behavior is causing issues, such as when TypeScript's `incremental` option is enabled, set `<TypeScriptEnableIncrementalMSBuild>false</TypeScriptEnableIncrementalMSBuild>` to ensure the TypeScript compiler is invoked with every run of MSBuild.
+However, if this behavior is causing issues, such as when TypeScript's [`incremental`](/tsconfig#incremental) option is enabled, set `<TypeScriptEnableIncrementalMSBuild>false</TypeScriptEnableIncrementalMSBuild>` to ensure the TypeScript compiler is invoked with every run of MSBuild.

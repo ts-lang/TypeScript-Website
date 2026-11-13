@@ -267,7 +267,7 @@ type T24 = InstanceType<Function>; // Error
 
 ## Improved control over mapped type modifiers
 
-Mapped types support adding a `readonly` or `?` modifier to a mapped property, but they did not provide support the ability to _remove_ modifiers.
+Mapped types support adding a `readonly` or `?` modifier to a mapped property, but they did not provide support for the ability to _remove_ modifiers.
 This matters in [_homomorphic mapped types_](https://github.com/Microsoft/TypeScript/pull/12563) which by default preserve the modifiers of the underlying type.
 
 TypeScript 2.8 adds the ability for a mapped type to either add or remove a particular modifier.
@@ -295,7 +295,7 @@ This type strips `?` modifiers from all properties of `T`, thus making all prope
 type Required<T> = { [P in keyof T]-?: T[P] };
 ```
 
-Note that in `--strictNullChecks` mode, when a homomorphic mapped type removes a `?` modifier from a property in the underlying type it also removes `undefined` from the type of that property:
+Note that in [`strictNullChecks`](/tsconfig#strictNullChecks) mode, when a homomorphic mapped type removes a `?` modifier from a property in the underlying type it also removes `undefined` from the type of that property:
 
 ##### Example
 
@@ -328,7 +328,7 @@ type T7 = T4<A, B>; // "a" | "b"
 ## Better handling for namespace patterns in `.js` files
 
 TypeScript 2.8 adds support for understanding more namespace patterns in `.js` files.
-Empty object literals declarations on top level, just like functions and classes, are now recognized as as namespace declarations in JavaScript.
+Empty object literals declarations on top level, just like functions and classes, are now recognized as namespace declarations in JavaScript.
 
 ```js
 var ns = {}; // recognized as a declaration for a namespace `ns`
@@ -397,7 +397,7 @@ app.C = class {};
 ## Per-file JSX factories
 
 TypeScript 2.8 adds support for a per-file configurable JSX factory name using `@jsx dom` pragma.
-JSX factory can be configured for a compilation using `--jsxFactory` (default is `React.createElement`). With TypeScript 2.8 you can override this on a per-file-basis by adding a comment to the beginning of the file.
+JSX factory can be configured for a compilation using [`jsxFactory`](/tsconfig#jsxFactory) (default is `React.createElement`). With TypeScript 2.8 you can override this on a per-file-basis by adding a comment to the beginning of the file.
 
 ##### Example
 
@@ -424,4 +424,4 @@ Combined with the per-file `@jsx` pragma, each file can have a different JSX fac
 
 ## New `--emitDeclarationOnly`
 
-`--emitDeclarationOnly` allows for _only_ generating declaration files; `.js`/`.jsx` output generation will be skipped with this flag. The flag is useful when the `.js` output generation is handled by a different transpiler like Babel.
+[`emitDeclarationOnly`](/tsconfig#emitDeclarationOnly) allows for _only_ generating declaration files; `.js`/`.jsx` output generation will be skipped with this flag. The flag is useful when the `.js` output generation is handled by a different transpiler like Babel.

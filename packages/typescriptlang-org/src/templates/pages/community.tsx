@@ -40,6 +40,9 @@ export const Comm: React.FC<Props> = props => {
 
   return (
     <Layout title={i("com_layout_title")} description={i("com_layout_description")} lang={props.pageContext.lang}>
+      <div className="container community centered">
+        <h1>{i("com_headline")}</h1>
+      </div>
       <div className="raised main-content-block container community" style={{ marginTop: "80px" }}>
         <Row>
           <Col className="sidebar">
@@ -49,59 +52,59 @@ export const Comm: React.FC<Props> = props => {
 
           <Col2 className="callouts">
             <div className="callout">
-              <a aria-labelledby="stack-header" className="icon stackoverflow img-circle" href="https://stackoverflow.com/questions/tagged/typescript" title="TypeScript tag on Stack Overflow" target="_blank"></a>
+              <a className="icon stackoverflow img-circle"></a>
               <div className="text">
                 <a href="https://stackoverflow.com/questions/tagged/typescript" id="stack-header" title="TypeScript tag on Stack Overflow" target="_blank">
-                  <h3 className="community-callout-headline">Stack Overflow</h3>
+                  <p className="community-callout-headline">Stack Overflow</p>
                 </a>
                 {i("com_online_stack_overflow_desc")}
               </div>
             </div>
 
             <div className="callout">
-              <a aria-labelledby="discord-header" className="icon discord img-circle" href="https://discord.gg/typescript" title="TypeScript Community on Stack Overflow" />
+            <a className="icon discord img-circle" />
 
               <div className="text">
-                <a href="https://discord.gg/typescript" id="discord-header" title="TypeScript Community on Stack Overflow" >
-                  <h3 className="community-callout-headline">{i("com_online_discord_header")}</h3>
+                <a href="https://discord.gg/typescript" id="discord-header" title="TypeScript Community on Discord" >
+                  <p className="community-callout-headline">{i("com_online_discord_header")}</p>
                 </a>
                 {i("com_online_discord_desc")}</div>
             </div>
             <div className="callout">
-              <a aria-labelledby="github-header" className="icon bug img-circle" href="https://github.com/microsoft/TypeScript/issues/new/choose" title="Create a new GitHub Issue on the TypeScript repo" target="_blank" />
+            <a className="icon bug img-circle" />
               <div className="text">
                 <a href="https://github.com/microsoft/TypeScript/issues/new/choose" id="github-header" title="Create a new GitHub Issue on the TypeScript repo">
-                  <h3 className="community-callout-headline">GitHub</h3>
+                  <p className="community-callout-headline">GitHub</p>
                 </a>
                 {i("com_online_github_desc")}{" "}
                 <a href="https://github.com/microsoft/TypeScript/issues/new/choose" title="Create a new GitHub Issue on the TypeScript repo">{i("com_online_github_href")}</a>
               </div>
             </div>
             <div className="callout">
-              <a aria-labelledby="twitter-header" className="icon twitter img-circle" href="https://twitter.com/typescript" target="_blank" title="The TypeScript team on Twitter" />
+            <a className="icon twitter img-circle" />
               <div className="text">
                 <a href="https://twitter.com/typescript" id="twitter-header" target="_blank" title="The TypeScript team on Twitter">
-                  <h3 className="community-callout-headline">Twitter</h3>
+                  <p className="community-callout-headline">Twitter</p>
                 </a>
                 {i("com_online_twitter_desc") + " "}
                 <a href="https://twitter.com/typescript" title="The TypeScript team on Twitter" target="_blank">@typescript</a>!
               </div>
             </div>
             <div className="callout">
-              <a aria-labelledby="blog-header" className="icon blog img-circle" href="https://devblogs.microsoft.com/typescript/" target="_blank" title="The official TypeScript blog" />
+            <a className="icon blog img-circle" />
               <div className="text">
                 <a href="https://devblogs.microsoft.com/typescript/" id="blog-header" target="_blank" title="The official TypeScript blog">
-                  <h3 className="community-callout-headline">Blog</h3>
+                  <p className="community-callout-headline">Blog</p>
                 </a>
                 {i("com_online_blog_desc") + " "}
                 <a href="https://devblogs.microsoft.com/typescript/" target="_blank" title="The official TypeScript blog">blog</a>!
               </div>
             </div>
             <div className="callout">
-              <a aria-labelledby="deftyped-header" className="icon definitelytyped img-circle" href="https://github.com/definitelytyped/definitelytyped/#definitelytyped" target="_blank" title="Definitely Typed, a central location for third party type definitions" />
+            <a className="icon definitelytyped img-circle" />
               <div className="text">
                 <a href="https://github.com/definitelytyped/definitelytyped/#definitelytyped" id="deftyped-header" target="_blank" title="Definitely Typed, a central location for third party type definitions">
-                  <h3 className="community-callout-headline">Definitely Typed</h3>
+                  <p className="community-callout-headline">Definitely Typed</p>
                 </a>
                 {i("com_online_typed_desc")}{" "}
                 <a href="https://github.com/definitelytyped/definitelytyped/#definitelytyped" target="_blank" title="Definitely Typed, a central location for third party type definitions">{i("com_online_typed_href")}</a>{" "}
@@ -185,10 +188,10 @@ export const Comm: React.FC<Props> = props => {
               <Col className="callout" key={index}>
                 <img src={require("../../assets/community/meetup-logos/" + meetup.image).default} className="icon img-square" alt={"logo of " + meetup.title} />
                 <div>
-                  <h4 className="community-callout-headline">{meetup.title}</h4>
+                  <p className="community-callout-headline">{meetup.title}</p>
                   <div className="text">{meetup.country}<br />
-                    <a rel="noopener" target="blank" href={meetup.url} title={"Website for " + meetup.title}>Website</a>
-                    {" "}{meetup.twitter ? <a rel="noopener" target="blank" href={meetup.twitter} title={"Twitter page for " + meetup.title}>Twitter</a> : null}
+                    <a rel="noopener" target="blank" href={meetup.url} title={meetup.title}>Website</a>
+                    {" "}{meetup.twitter ? <a rel="noopener" target="blank" href={meetup.twitter} title={meetup.title}>Twitter</a> : null}
                   </div>
                 </div>
               </Col>

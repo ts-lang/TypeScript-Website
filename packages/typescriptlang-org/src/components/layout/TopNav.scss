@@ -109,6 +109,7 @@
 form.search {
   height: 3rem;
   background-color: $ts-main-blue-darker-color;
+  border-radius: 3px 0px 0px 3px;
 
   padding-left: 1rem;
   display: inline-block;
@@ -127,6 +128,12 @@ form.search {
 
   &:focus-within {
     background-color: $ts-main-blue-lighter-color;
+    @media screen and (-ms-high-contrast: black-on-white) {
+      border: 2px solid white;
+    }
+    @media screen and (-ms-high-contrast: white-on-black) {
+      border: 2px solid black;
+    }
   }
 
   input {
@@ -285,7 +292,7 @@ form.search {
     right: 0px;
 
     /* Makes search elements full width */
-    li.nav-item {
+    .nav-item {
       display: block;
     }
 
@@ -370,6 +377,41 @@ form.search {
       left: 40px;
       bottom: -7px;
       transform: rotate(135deg);
+    }
+  }
+}
+
+@media (max-width: 790px) and (max-height: 480px) {
+  #top-menu {
+    position: static;
+
+    &.up,
+    &.down {
+      transform: none;
+    }
+
+    form.search {
+      .algolia-autocomplete {
+        flex: 1;
+        min-width: 0;
+      }
+
+      input {
+        width: 100%;
+      }
+    }
+
+    .ds-dropdown-menu {
+      top: 100% !important;
+      right: auto !important;
+      bottom: auto;
+      width: calc(100vw - 1rem);
+
+      &:before {
+        top: -7px;
+        bottom: auto;
+        transform: rotate(-45deg);
+      }
     }
   }
 }

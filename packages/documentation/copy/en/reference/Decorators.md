@@ -6,19 +6,18 @@ oneline: TypeScript Decorators overview
 translatable: true
 ---
 
-## Introduction
+> NOTE&nbsp; This document refers to an experimental stage 2 decorators implementation. Stage 3 decorator support is available since Typescript 5.0.
+> See: [Decorators in Typescript 5.0](https://devblogs.microsoft.com/typescript/announcing-typescript-5-0/#decorators)
 
-<blockquote class='bg-reading'>
-  <p>Further Reading:<br /><a href='https://saul-mirone.github.io/a-complete-guide-to-typescript-decorator/'>A Complete Guide to TypeScript Decorators</a></p>
-</blockquote>
+## Introduction
 
 With the introduction of Classes in TypeScript and ES6, there now exist certain scenarios that require additional features to support annotating or modifying classes and class members.
 Decorators provide a way to add both annotations and a meta-programming syntax for class declarations and members.
-Decorators are a [stage 2 proposal](https://github.com/tc39/proposal-decorators) for JavaScript and are available as an experimental feature of TypeScript.
 
-> NOTE&emsp; Decorators are an experimental feature that may change in future releases.
+> Further Reading (stage 2): [A Complete Guide to TypeScript Decorators](https://saul-mirone.github.io/a-complete-guide-to-typescript-decorator/)
 
-To enable experimental support for decorators, you must enable the `experimentalDecorators` compiler option either on the command line or in your `tsconfig.json`:
+
+To enable experimental support for decorators, you must enable the [`experimentalDecorators`](/tsconfig#experimentalDecorators) compiler option either on the command line or in your `tsconfig.json`:
 
 **Command Line**:
 
@@ -94,7 +93,7 @@ function g() {}
 x
 ```
 
-When multiple decorators apply to a single declaration, their evaluation is similar to [function composition in mathematics](http://wikipedia.org/wiki/Function_composition). In this model, when composing functions _f_ and _g_, the resulting composite (_f_ ∘ _g_)(_x_) is equivalent to _f_(_g_(_x_)).
+When multiple decorators apply to a single declaration, their evaluation is similar to [function composition in mathematics](https://wikipedia.org/wiki/Function_composition). In this model, when composing functions _f_ and _g_, the resulting composite (_f_ ∘ _g_)(_x_) is equivalent to _f_(_g_(_x_)).
 
 As such, the following steps are performed when evaluating multiple decorators on a single declaration in TypeScript:
 
@@ -187,7 +186,7 @@ function sealed(constructor: Function) {
 }
 ```
 
-When `@sealed` is executed, it will seal both the constructor and its prototype which would not allow the class to be sub-classed at runtime.
+When `@sealed` is executed, it will seal both the constructor and its prototype, and will therefore prevent any further functionality from being added to or removed from this class during runtime by accessing `BugReport.prototype` or by defining properties on `BugReport` itself (note that ES2015 classes are really just syntactic sugar to prototype-based constructor functions). This decorator does **not** prevent classes from sub-classing `BugReport`.
 
 Next we have an example of how to override the constructor to set new defaults.
 
@@ -475,7 +474,7 @@ function validate(target: any, propertyName: string, descriptor: TypedPropertyDe
 ```
 
 The `@required` decorator adds a metadata entry that marks the parameter as required.
-The `@validate` decorator then wraps the existing `greet` method in a function that validates the arguments before invoking the original method.
+The `@validate` decorator then wraps the existing `print` method in a function that validates the arguments before invoking the original method.
 
 > NOTE&emsp; This example requires the `reflect-metadata` library.
 > See [Metadata](#metadata) for more information about the `reflect-metadata` library.
@@ -493,7 +492,7 @@ npm i reflect-metadata --save
 ```
 
 TypeScript includes experimental support for emitting certain types of metadata for declarations that have decorators.
-To enable this experimental support, you must set the `emitDecoratorMetadata` compiler option either on the command line or in your `tsconfig.json`:
+To enable this experimental support, you must set the [`emitDecoratorMetadata`](/tsconfig#emitDecoratorMetadata) compiler option either on the command line or in your `tsconfig.json`:
 
 **Command Line**:
 

@@ -16,7 +16,7 @@ deprecation_redirects: [
   interfaces-vs-type-aliases, /docs/handbook/2/everyday-types.html#differences-between-type-aliases-and-interfaces,
   enum-member-types, /docs/handbook/enums.html,
   polymorphic-this-types, /docs/handbook/2/classes.html,
-  index-types, /docs/handbook/2/indexed-access-types.html,
+  index-types, /docs/handbook/2/objects.html#index-signatures,
   index-types-and-index-signatures, /docs/handbook/2/indexed-access-types.html,
   mapped-types, /docs/handbook/2/mapped-types.html,
   inference-from-mapped-types, /docs/handbook/2/mapped-types.html,
@@ -24,6 +24,8 @@ deprecation_redirects: [
   distributive-conditional-types, /docs/handbook/2/conditional-types.html#distributive-conditional-types,
   type-inference-in-conditional-types, /docs/handbook/2/conditional-types.html#inferring-within-conditional-types,
   predefined-conditional-types, /docs/handbook/utility-types.html,
+  using-the-in-operator, "/docs/handbook/2/narrowing.html#the-in-operator-narrowing",
+  using-type-predicates, "/docs/handbook/2/narrowing.html#using-type-predicates"
 ]
 ---
 
@@ -263,7 +265,7 @@ Effectively, `null` and `undefined` are valid values of every type.
 That means it's not possible to _stop_ them from being assigned to any type, even when you would like to prevent it.
 The inventor of `null`, Tony Hoare, calls this his ["billion dollar mistake"](https://wikipedia.org/wiki/Null_pointer#History).
 
-The [`--strictNullChecks`](/tsconfig#strictNullChecks) flag fixes this: when you declare a variable, it doesn't automatically include `null` or `undefined`.
+The [`strictNullChecks`](/tsconfig#strictNullChecks) flag fixes this: when you declare a variable, it doesn't automatically include `null` or `undefined`.
 You can include them explicitly using a union type:
 
 ```ts twoslash
@@ -284,7 +286,7 @@ From TypeScript 3.7 and onwards, you can use [optional chaining](/docs/handbook/
 
 ### Optional parameters and properties
 
-With [`--strictNullChecks`](/tsconfig#strictNullChecks), an optional parameter automatically adds `| undefined`:
+With [`strictNullChecks`](/tsconfig#strictNullChecks), an optional parameter automatically adds `| undefined`:
 
 ```ts twoslash
 // @errors: 2345
@@ -345,7 +347,7 @@ In cases where the compiler can't eliminate `null` or `undefined`, you can use t
 The syntax is postfix `!`: `identifier!` removes `null` and `undefined` from the type of `identifier`:
 
 ```ts twoslash
-// @errors: 2532
+// @errors: 2532 18048
 function getUser(id: string): UserAccount | undefined {
   return {} as any;
 }
@@ -423,6 +425,7 @@ As we mentioned, type aliases can act sort of like interfaces; however, there ar
 
 Almost all features of an `interface` are available in `type`, the key distinction is that a type cannot be re-opened to add new properties vs an interface which is always extendable.
 
+<div class='table-container'>
 <table class='full-width-table'>
   <tbody>
     <tr>
@@ -488,6 +491,7 @@ type Window = {
     </tr>
     </tbody>
 </table>
+</div>
 
 Because an interface more closely maps how JavaScript objects work [by being open to extension](https://wikipedia.org/wiki/Open/closed_principle), we recommend using an interface over a type alias when possible.
 
@@ -754,7 +758,7 @@ Note that this syntax describes a type rather than a member.
 If you want to add members, you can use an intersection type:
 
 ```ts twoslash
-// @errors: 2693 1005 1128
+// @errors: 2693 1005 1128 7061
 // Use this:
 type PartialWithNewMember<T> = {
   [P in keyof T]?: T[P];

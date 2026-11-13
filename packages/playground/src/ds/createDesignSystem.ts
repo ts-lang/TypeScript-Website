@@ -1,5 +1,5 @@
-import type { Sandbox } from "typescriptlang-org/static/js/sandbox"
-import type { DiagnosticRelatedInformation, Node } from "typescript"
+import type { Sandbox } from "@typescript/sandbox"
+import type { DiagnosticRelatedInformation, Node as TSNode } from "typescript"
 
 export type LocalStorageOption = {
   blurb: string
@@ -17,12 +17,29 @@ export type OptionsListConfig = {
   requireRestart?: true
 }
 
+type ElementChild = string | Node
+
+const appendChildren = (el: Element, children: ElementChild[]) => {
+  children.forEach(child => {
+    el.appendChild(typeof child === "string" ? document.createTextNode(child) : child)
+  })
+}
+
 const el = (str: string, elementType: string, container: Element) => {
   const el = document.createElement(elementType)
-  el.innerHTML = str
+  el.textContent = str
   container.appendChild(el)
   return el
 }
+
+const elWithChildren = (children: ElementChild[], elementType: string, container: Element) => {
+  const el = document.createElement(elementType)
+  appendChildren(el, children)
+  container.appendChild(el)
+  return el
+}
+
+export type DesignSystem = ReturnType<ReturnType<typeof createDesignSystem>>
 
 // The Playground Plugin design system
 export const createDesignSystem = (sandbox: Sandbox) => {
@@ -100,8 +117,11 @@ export const createDesignSystem = (sandbox: Sandbox) => {
 
       const li = document.createElement("li")
       const label = document.createElement("label")
-      const split = setting.oneline ? "" : "<br/>"
-      label.innerHTML = `<span>${setting.display}</span>${split}${setting.blurb}`
+      const display = document.createElement("span")
+      display.textContent = setting.display
+      label.appendChild(display)
+      if (!setting.oneline) label.appendChild(document.createElement("br"))
+      label.appendChild(document.createTextNode(setting.blurb))
 
       const key = setting.flag
       const input = document.createElement("input")
@@ -149,12 +169,23 @@ export const createDesignSystem = (sandbox: Sandbox) => {
 
     const code = (code: string) => {
       const createCodePre = document.createElement("pre")
+      createCodePre.setAttribute("tabindex", "0")
       const codeElement = document.createElement("code")
 
-      codeElement.innerHTML = code
+      codeElement.textContent = code
 
       createCodePre.appendChild(codeElement)
       container.appendChild(createCodePre)
+
+      // When <pre> focused, Ctrl+A should select only code pre instead of the entire document
+      createCodePre.addEventListener("keydown", e => {
+        if (e.key.toUpperCase() === "A" && (e.ctrlKey || e.metaKey)) {
+          const selection = window.getSelection();
+          if (!selection) return;
+          selection.selectAllChildren(createCodePre)
+          e.preventDefault();
+        }
+      })
 
       return codeElement
     }
@@ -172,6 +203,32 @@ export const createDesignSystem = (sandbox: Sandbox) => {
 
       container.appendChild(noErrorsMessage)
       return noErrorsMessage
+    }
+
+    const link = (href: string, text: string) => {
+      const a = document.createElement("a")
+      a.href = href
+      a.textContent = text
+      return a
+    }
+
+    const inlineCode = (text: string) => {
+      const code = document.createElement("code")
+      code.textContent = text
+      return code
+    }
+
+    const lineBreak = () => document.createElement("br")
+
+    const unorderedList = (...items: ElementChild[][]) => {
+      const ul = document.createElement("ul")
+      items.forEach(item => {
+        const li = document.createElement("li")
+        appendChildren(li, item)
+        ul.appendChild(li)
+      })
+      container.appendChild(ul)
+      return ul
     }
 
     const createTabBar = () => {
@@ -292,13 +349,13 @@ export const createDesignSystem = (sandbox: Sandbox) => {
       container.appendChild(ol)
     }
 
-    const createASTTree = (node: Node, settings?: { closedByDefault?: true }) => {
+    const createASTTree = (node: TSNode, settings?: { closedByDefault?: true }) => {
       const autoOpen = !settings || !settings.closedByDefault
 
       const div = document.createElement("div")
       div.className = "ast"
 
-      const infoForNode = (node: Node) => {
+      const infoForNode = (node: TSNode) => {
         const name = ts.SyntaxKind[node.kind]
 
         return {
@@ -315,37 +372,43 @@ export const createDesignSystem = (sandbox: Sandbox) => {
         if (key === "kind") {
           suffix = ` (SyntaxKind.${info.name})`
         }
-        li.innerHTML = `${key}: <span class='${typeofSpan}'>${value}</span>${suffix}`
+        li.textContent = `${key}: `;
+        const span = document.createElement('span');
+        span.className = typeofSpan;
+        span.textContent = value;
+        li.appendChild(span);
+        li.appendChild(document.createTextNode(suffix));
         return li
       }
 
-      const renderSingleChild = (key: string, value: Node, depth: number) => {
+      const renderSingleChild = (key: string, value: TSNode, depth: number) => {
         const li = document.createElement("li")
-        li.innerHTML = `${key}: `
+        li.textContent = `${key}: `
 
         renderItem(li, value, depth + 1)
         return li
       }
 
-      const renderManyChildren = (key: string, nodes: Node[], depth: number) => {
-        const childers = document.createElement("div")
-        childers.classList.add("ast-children")
+      const renderManyChildren = (key: string, nodes: TSNode[], depth: number) => {
+        const children = document.createElement("div")
+        children.classList.add("ast-children")
 
         const li = document.createElement("li")
-        li.innerHTML = `${key}: [<br/>`
-        childers.appendChild(li)
+        li.textContent = `${key}: [`
+        li.appendChild(document.createElement("br"))
+        children.appendChild(li)
 
         nodes.forEach(node => {
-          renderItem(childers, node, depth + 1)
+          renderItem(children, node, depth + 1)
         })
 
         const liEnd = document.createElement("li")
-        liEnd.innerHTML += "]"
-        childers.appendChild(liEnd)
-        return childers
+        liEnd.textContent = "]"
+        children.appendChild(liEnd)
+        return children
       }
 
-      const renderItem = (parentElement: Element, node: Node, depth: number) => {
+      const renderItem = (parentElement: Element, node: TSNode, depth: number) => {
         const itemDiv = document.createElement("div")
         parentElement.appendChild(itemDiv)
         itemDiv.className = "ast-tree-start"
@@ -459,7 +522,16 @@ export const createDesignSystem = (sandbox: Sandbox) => {
       return form
     }
 
+    const createSubDesignSystem = (): any => {
+      const div = document.createElement("div")
+      container.appendChild(div)
+      const ds = createDesignSystem(sandbox)(div)
+      return ds
+    }
+
     return {
+      /** The element of the design system */
+      container,
       /** Clear the sidebar */
       clear,
       /** Present code in a pre > code  */
@@ -470,6 +542,18 @@ export const createDesignSystem = (sandbox: Sandbox) => {
       subtitle: (subtitle: string) => el(subtitle, "h4", container),
       /** Used to show a paragraph */
       p: (subtitle: string) => el(subtitle, "p", container),
+      /** Used to show a paragraph with safe DOM children */
+      pWithChildren: (...children: ElementChild[]) => elWithChildren(children, "p", container),
+      /** Used to show a section heading with safe DOM children */
+      subtitleWithChildren: (...children: ElementChild[]) => elWithChildren(children, "h4", container),
+      /** Creates an unattached anchor with safe text */
+      link,
+      /** Creates an unattached inline code element with safe text */
+      inlineCode,
+      /** Creates an unattached line break */
+      lineBreak,
+      /** Appends an unordered list with safe DOM children */
+      unorderedList,
       /** When you can't do something, or have nothing to show */
       showEmptyScreen,
       /**
@@ -495,6 +579,10 @@ export const createDesignSystem = (sandbox: Sandbox) => {
       createTabButton,
       /** A general "restart your browser" message  */
       declareRestartRequired,
+      /** Create a new Design System instance and add it to the container. You'll need to cast
+       * this after usage, because otherwise the type-system circularly references itself
+       */
+      createSubDesignSystem,
     }
   }
 }

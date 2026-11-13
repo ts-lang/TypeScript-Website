@@ -16,7 +16,6 @@ import { createInternational } from "../lib/createInternational"
 import { useIntl } from "react-intl"
 import { createIntlLink } from "../components/IntlLink"
 import { handbookCopy } from "../copy/en/handbook"
-import { setupTwoslashHovers } from "shiki-twoslash/dist/dom"
 import { Contributors } from "../components/handbook/Contributors"
 import { overrideSubNavLinksWithSmoothScroll, updateSidebarOnScroll } from "./scripts/setupSubNavigationSidebar"
 import { setupLikeDislikeButtons } from "./scripts/setupLikeDislikeButtons"
@@ -66,7 +65,6 @@ const HandbookTemplate: React.FC<Props> = (props) => {
     // Sets current selection
     updateSidebarOnScroll()
 
-    setupTwoslashHovers()
     setupLikeDislikeButtons(props.pageContext.slug, i)
 
 
@@ -82,19 +80,18 @@ const HandbookTemplate: React.FC<Props> = (props) => {
   const selectedID = props.pageContext.id || "NO-ID"
   const sidebarHeaders = post.headings?.filter(h => (h?.depth || 0) <= 3) || []
   const showSidebar = !post.frontmatter.disable_toc
-  const showSidebarHeadings = post.headings && sidebarHeaders.length <= 30
+  const showExperimental = post.frontmatter.experimental
   const navigation = getDocumentationNavForLanguage(props.pageContext.lang)
   const isHandbook = post.frontmatter.handbook
   const prefix = isHandbook ? "Handbook" : "Documentation"
 
-
   const slug = slugger()
   return (
-    <Layout title={`${prefix} - ${post.frontmatter.title}`} description={post.frontmatter.oneline || ""} lang={props.pageContext.lang}>
+    <Layout title={`${prefix} - ${post.frontmatter.title}`} description={post.frontmatter.oneline || ""} lang={props.pageContext.lang} skipToAnchor="#handbook-content">
       <section id="doc-layout" >
         <SidebarToggleButton />
 
-        <div className="page-popup" id="page-helpful-popup" style={{ opacity: 0 }}>
+        <div className="page-popup" id="page-helpful-popup" role="status" aria-live="polite" style={{ opacity: 0, display: "none" }}>
           <p>Was this page helpful?</p>
           <div>
             <button className="first" id="like-button-popup" title="Like this page"><LikeUnfilledSVG /></button>
@@ -103,6 +100,7 @@ const HandbookTemplate: React.FC<Props> = (props) => {
         </div>
 
         <noscript>
+          {/* Open by default so that folks without JS get a fully open sidebar */}
           <style dangerouslySetInnerHTML={{
             __html: `
           nav#sidebar > ul > li.closed ul {
@@ -118,7 +116,7 @@ const HandbookTemplate: React.FC<Props> = (props) => {
               <Helmet>
                 <link rel="canonical" href={`https://www.typescriptlang.org${post.frontmatter.deprecated_by}`} />
               </Helmet>
-              <div id="deprecated">
+              <div id="deprecated-header">
                 <div id="deprecated-content">
                   <div id="deprecated-icon">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7.5" stroke="black" /><path d="M8 3V9" stroke="black" /><path d="M8 11L8 13" stroke="black" /></svg>
@@ -135,7 +133,21 @@ const HandbookTemplate: React.FC<Props> = (props) => {
             </>
           }
 
-          <h2>{post.frontmatter.title}</h2>
+          {showExperimental &&
+            <div id="deprecated-header">
+              <div id="deprecated-content">
+                <div id="deprecated-icon">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7.5" stroke="black" /><path d="M8 3V9" stroke="black" /><path d="M8 11L8 13" stroke="black" /></svg>
+                </div>
+                <div>
+                  <h3>{i("handb_experimental_title")}</h3>
+                  <p>{i("handb_experimental_subtitle")}</p>
+                </div>
+              </div>
+            </div>
+          }
+
+          <h1>{post.frontmatter.title}</h1>
           {post.frontmatter.preamble && <div className="preamble" dangerouslySetInnerHTML={{ __html: post.frontmatter.preamble }} />}
           <article>
             <div className="whitespace raised">
@@ -143,21 +155,14 @@ const HandbookTemplate: React.FC<Props> = (props) => {
             </div>
             {showSidebar &&
               <aside className="handbook-toc">
-                <nav className={deprecationURL ? "deprecated" : ""}>
-                  {showSidebarHeadings && <>
-                    <h5>{i("handb_on_this_page")}</h5>
-                    <ul>
-                      {
-                        sidebarHeaders.map(heading => {
-                          const id = slug.slug(heading!.value, false)
-                          return <li key={id}><a href={'#' + id}>{heading!.value}</a></li>
-                        })
-                      }
-                    </ul>
+                <nav className={deprecationURL ? "deprecated" : ""} aria-label="table of contents">
+                  {<>
+                    <h2>{i("handb_on_this_page")}</h2>
+                    <MarkdownHeadingTree tree={headerListToTree(sidebarHeaders)} className="handbook-on-this-page-section-list" slug={slug} />
                   </>
                   }
-                  <div id="like-dislike-subnav">
-                    <h5>{i("handb_like_dislike_title")}</h5>
+                  <div id="like-dislike-subnav" role="status" aria-live="polite">
+                    <h2>{i("handb_like_dislike_title")}</h2>
                     <div>
                       <button title="Like this page" id="like-button"><LikeUnfilledSVG /> {i("handb_like_desc")}</button>
                       <button title="Dislike this page" id="dislike-button"><DislikeUnfilledSVG /> {i("handb_dislike_desc")}</button>
@@ -175,6 +180,60 @@ const HandbookTemplate: React.FC<Props> = (props) => {
       </section>
     </Layout>
   )
+}
+
+type MarkdownHeadingTreeNode = {
+  value: string
+  depth: number
+  children?: MarkdownHeadingTreeNode[]
+}
+
+function headerListToTree(sidebarHeaders: GatsbyTypes.Maybe<Pick<GatsbyTypes.MarkdownHeading, "value" | "depth">>[]) {
+  const tree: MarkdownHeadingTreeNode[] = []
+  const stack: { node: MarkdownHeadingTreeNode; depth: number }[] = []
+
+  sidebarHeaders.forEach(header => {
+    const value = header?.value!;
+    const depth = header?.depth!;
+    const newNode: MarkdownHeadingTreeNode = {
+      value,
+      depth
+    }
+
+    while (stack.length > 0 && stack[stack.length - 1].depth >= depth) {
+      stack.pop()
+    }
+
+    if (stack.length === 0) {
+      tree.push(newNode)
+    } else {
+      const topNode = stack[stack.length - 1].node;
+      if (!topNode.children) {
+        topNode.children = [];
+      }
+      topNode.children.push(newNode);
+    }
+
+    stack.push({ node: newNode, depth })
+  })
+
+  return tree
+}
+
+function MarkdownHeadingTree(props: { tree: MarkdownHeadingTreeNode[], slug: typeof slugger, className?: string }) {
+  return <ul className={props.className}>
+      {
+        props.tree.map(heading => {
+          const id = props.slug.slug(heading.value, false)
+          return (
+            <li key={id}>
+              <a href={'#' + id}>{heading.value}</a>
+              {heading.children?.length ? <MarkdownHeadingTree tree={heading.children} slug={props.slug} /> : null}
+            </li>
+          )
+        })
+      }
+    </ul>
 }
 
 export default (props: Props) => <Intl locale={props.pageContext.lang}><HandbookTemplate {...props} /></Intl>
@@ -198,6 +257,7 @@ export const pageQuery = graphql`
         preamble
         deprecated_by
         deprecation_redirects
+        experimental
       }
     }
 

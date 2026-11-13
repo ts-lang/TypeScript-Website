@@ -20,6 +20,9 @@ import { workbenchMarkdownPlugin } from "../../components/workbench/plugins/mark
 import { workbenchReferencePlugin } from "../../components/workbench/plugins/docs"
 import { createDefaultMapFromCDN } from "@typescript/vfs"
 import { twoslasher, TwoSlashReturn } from "@typescript/twoslash"
+import { getPlaygroundUrls } from "../../lib/playgroundURLs";
+
+import type * as playgroundPackage from "../../../static/js/playground";
 
 type TwoSlashReturns = import("@typescript/twoslash").TwoSlashReturn
 
@@ -39,6 +42,8 @@ const Play: React.FC<Props> = (props) => {
     window.reactDOM = ReactDOM
     // @ts-ignore - so that plugins etc can use local functions
     window.i = i
+    // @ts-ignore - same as window.i but hopefully not overwritten by App Insights
+    window.__tsLocalize = i
 
     const getLoaderScript = document.createElement('script');
     getLoaderScript.src = withPrefix("/js/vs.loader.js");
@@ -48,27 +53,29 @@ const Play: React.FC<Props> = (props) => {
 
       let tsVersionParam = params.get("ts")
       // handle the nightly lookup 
-      if (!tsVersionParam || tsVersionParam && tsVersionParam === "Nightly" || tsVersionParam === "next") {
-        // Avoids the CDN to doubly skip caching
-        const nightlyLookup = await fetch("https://tswebinfra.blob.core.windows.net/indexes/next.json", { cache: "no-cache" })
+      if (!tsVersionParam || tsVersionParam === "Nightly" || tsVersionParam === "next") {
+        // The CDN is configured to have a short TTL on the indexes directory.
+        const nightlyLookup = await fetch("https://playgroundcdn.typescriptlang.org/indexes/next.json", { cache: "no-cache" })
         const nightlyJSON = await nightlyLookup.json()
         tsVersionParam = nightlyJSON.version
       }
+      // Allow prod builds to set a custom commit prefix to bust caches
+      const { sandboxRoot, playgroundRoot, playgroundWorker } = getPlaygroundUrls()
 
       // @ts-ignore
       const re: any = global.require
       re.config({
         paths: {
-          vs: `https://typescript.azureedge.net/cdn/${tsVersionParam}/monaco/min/vs`,
-          "typescript-sandbox": withPrefix('/js/sandbox'),
-          "typescript-playground": withPrefix('/js/playground'),
+          vs: `https://playgroundcdn.typescriptlang.org/cdn/${tsVersionParam}/monaco/dev/vs`,
+          "typescript-sandbox": sandboxRoot,
+          "typescript-playground": playgroundRoot,
           "unpkg": "https://unpkg.com/",
           "local": "http://localhost:5000"
         },
         ignoreDuplicateModules: ["vs/editor/editor.main"],
       });
 
-      re(["vs/editor/editor.main", "vs/language/typescript/tsWorker", "typescript-sandbox/index", "typescript-playground/index"], async (main: typeof import("monaco-editor"), tsWorker: any, sandbox: typeof import("@typescript/sandbox"), playground: typeof import("@typescript/playground")) => {
+      re(["vs/editor/editor.main", "vs/language/typescript/tsWorker", "typescript-sandbox/index", "typescript-playground/index"], async (main: typeof import("monaco-editor"), tsWorker: any, sandbox: typeof import("@typescript/sandbox"), playground: typeof playgroundPackage) => {
         // Importing "vs/language/typescript/tsWorker" will set ts as a global
         const ts = (global as any).ts
         const isOK = main && ts && sandbox && playground
@@ -90,13 +97,14 @@ const Play: React.FC<Props> = (props) => {
           text: localStorage.getItem('sandbox-history') || i("play_default_code_sample"),
           compilerOptions: {},
           domID: "monaco-editor-embed",
-          useJavaScript: !!params.get("useJavaScript"),
+          filetype: "ts",
           acquireTypes: !localStorage.getItem("disable-ata"),
           supportTwoslashCompilerOptions: true,
           monacoSettings: {
             fontFamily: "var(--code-font)",
             fontLigatures: true
-          }
+          },
+          customTypeScriptWorkerPath: document.location.origin + playgroundWorker
         }, main, ts)
 
         const playgroundConfig = {
@@ -121,25 +129,18 @@ const Play: React.FC<Props> = (props) => {
             dtsMap = defaultMap
             runTwoslash()
           })
-
         }
 
         // When the compiler notices a twoslash compiler flag change, this will get triggered and reset the DTS map
         sandboxEnv.setDidUpdateCompilerSettings(updateDTSEnv)
         updateDTSEnv(sandboxEnv.getCompilerOptions())
 
+       
         const debouncedTwoslash = debounce(() => {
           if (dtsMap) runTwoslash()
-
-          const isTSErrorsEnabled = !sandboxEnv.languageServiceDefaults.getDiagnosticsOptions().noSemanticValidation
-          const shouldBeEnabled = !sandboxEnv.getText().includes("// @filename")
-          if (isTSErrorsEnabled !== shouldBeEnabled) {
-            // Turn off the suggestions for multi-file reports
-            sandboxEnv.languageServiceDefaults.setDiagnosticsOptions({ noSemanticValidation: !shouldBeEnabled })
-          }
         }, 1000)
 
-        sandboxEnv.editor.onDidChangeModelContent(debouncedTwoslash)
+        sandboxEnv.editor.onDidChangeModelContent(() => debouncedTwoslash())
 
         let currentTwoslashResults: Error | TwoSlashReturn | undefined = undefined
         let currentDTSMap: Map<string, string> | undefined = undefined
@@ -202,6 +203,8 @@ const Play: React.FC<Props> = (props) => {
 
         sandboxEnv.editor.focus()
         sandboxEnv.editor.layout()
+
+        debouncedTwoslash()
       });
     }
 

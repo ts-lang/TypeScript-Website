@@ -1,83 +1,128 @@
 name: CI
-on: pull_request
+on:
+  pull_request:
+    branches:
+      - v2
+
+permissions:
+  contents: read
+
+# Ensure scripts are run with pipefail. See:
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#exit-codes-and-error-action-preference
+defaults:
+  run:
+    shell: bash
 
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+
+    runs-on: ${{ matrix.os }}
 
     steps:
-      # Check out, and set up the node/ruby infra
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "13.x"
+          node-version: "20.x"
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
 
-      - uses: actions/cache@v2
-        id: yarn-cache
-        with:
-          path: |
-            packages/typescriptlang-org/.cache
-            packages/.cache
-            **/node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-
-      - uses: microsoft/playwright-github-action@v1
-
-      # Install, should be absically instant if cached
-      - run: yarn install
-        env:
-          YARN_CHECKSUM_BEHAVIOR: ignore
-
-      # Verify dependencies are hooked up right
-      - run: node test/verifyPackageVersions.js
+      - run: pnpm install
 
       # Grab localizations
-      - run: yarn docs-sync pull microsoft/TypeScript-Website-localizations#main 1
+      - run: pnpm docs-sync pull microsoft/TypeScript-Website-localizations#main 1
 
       # Build the packages
-      - run: yarn bootstrap
-      - run: yarn workspace typescriptlang-org build
+      - run: pnpm bootstrap
+      - run: pnpm build
 
       # Verify it compiles
-      - run: yarn compile
-      # Run all the package's tests
-      - run: yarn test
-        env:
-          CI: true
-
-      # danger for PR builds
-      - if: github.event_name == 'pull_request' && github.event.base.repo.id == github.event.head.repo.id
-        run: "yarn danger ci"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_DEPLOY_URL_ROOT: ${{ steps.deploy.outputs.static_web_app_url }}
-
-      - name: "Validates that TypeScript plugins work"
-        run: |
-          cd ..
-          npm init typescript-playground-plugin playground-my-plugin
-
-  windows:
-    runs-on: windows-latest
-
-    steps:
-      # Check out, and set up the node infra
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - run: pnpm build-site
+      
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest'
         with:
-          node-version: "13.x"
+          name: site
+          path: packages/typescriptlang-org/public
 
-      # Get local dependencies
-      - run: yarn install
+      # Run all the package's tests
+      - run: pnpm test
+
+      - run: |
+          git add .
+          if ! git diff --staged --exit-code --quiet; then
+            echo "This PR is missing some generated changes. Please update locally or merge the patch artifact."
+            echo ""
+            git diff --staged
+            git diff --staged > missing.patch
+            exit 1
+          fi
+        name: Check for uncommitted changes
+        id: check-diff
+        if: github.event_name == 'pull_request'
+
+      - name: Upload diff artifact
+        if: ${{ failure() && steps.check-diff.conclusion == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: missing.patch
+          path: missing.patch
+
+  changesets:
+    name: changesets
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: 'lts/*'
+    - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+    
+    - run: pnpm install
+    
+    - name: Check for missing changesets
+      run: |
+        PR_CHANGESETS=$(ls .changeset | (grep -v -E 'README\.md|config\.json' || true) | wc -l)
+        MAIN_CHANGESETS=$(git ls-tree -r origin/v2 .changeset | (grep -v -E 'README\.md|config\.json' || true) | wc -l)
+
+        # If the PR has no changesets, but main has changesets, assume this is PR is a versioning PR and exit
+        if [[ $PR_CHANGESETS -eq 0 && $MAIN_CHANGESETS -gt 0 ]]; then
+          echo "This PR is a versioning PR, exiting"
+          exit 0
+        fi
+
+        # git switch -c changesets-temp
+        # git checkout origin/v2 -- <ignored files>
+        pnpm changeset status --since=origin/v2
+
+  release-pipeline:
+    name: release pipeline
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: 'lts/*'
+    - run: node build/azure-pipelines/pack-changed-packages.mjs --check-stage-capacity
+
+  required:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs:
+      - tests
+      - changesets
+      - release-pipeline
+    
+    steps:
+      - name: Check required jobs
         env:
-          YARN_CHECKSUM_BEHAVIOR: ignore
-
-      - run: yarn bootstrap
-      - run: yarn build
-
-      - name: "Validates that TypeScript plugins work"
+          NEEDS: ${{ toJson(needs) }}
         run: |
-          cd ..
-          npm init typescript-playground-plugin playground-my-plugin
+          ! echo $NEEDS | jq -e 'to_entries[] | { job: .key, result: .value.result } | select(.result != "success")'

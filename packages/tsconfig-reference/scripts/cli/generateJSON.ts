@@ -3,29 +3,34 @@
 
 /** Run with:
      node --inspect-brk ./node_modules/.bin/ts-node packages/tsconfig-reference/scripts/cli/generateJSON.ts
-     yarn ts-node scripts/cli/generateJSON.ts
+     pnpm ts-node scripts/cli/generateJSON.ts
 */
+console.log("TSConfig Ref: JSON for CLI Opts");
 
-import * as ts from "typescript";
+import ts from "typescript-for-docs";
 
 import { CommandLineOptionBase } from "../types";
-import { writeFileSync } from "fs";
+import { writeFileSync, readFileSync } from "fs";
 import { join } from "path";
-import { format } from "prettier";
+import prettier from "prettier";
 import {
   deprecated,
   internal,
   defaultsForOptions,
   allowedValues,
   configToRelease,
-} from "../tsconfigRules";
+} from "../tsconfigRules.js";
 import { CompilerOptionName } from "../../data/_types";
 
-const toJSONString = (obj) => format(JSON.stringify(obj, null, "  "), { filepath: "thing.json" });
-const writeJSON = (name, obj) =>
-  writeFileSync(join(__dirname, "..", "..", "data", name), toJSONString(obj));
-const writeString = (name, text) =>
-  writeFileSync(join(__dirname, "..", "..", "data", name), format(text, { filepath: name }));
+const toJSONString = (obj: any) =>
+  prettier.format(JSON.stringify(obj, null, "  "), { filepath: "thing.json" });
+const writeJSON = (name: string, obj: any) =>
+  writeFileSync(new URL(`../../data/${name}`, import.meta.url), toJSONString(obj));
+const writeString = (name: string, text: string) =>
+  writeFileSync(
+    new URL(`../../data/${name}`, import.meta.url),
+    prettier.format(text, { filepath: name })
+  );
 
 export interface CompilerOptionJSON extends CommandLineOptionBase {
   releaseVersion?: string;
@@ -39,8 +44,7 @@ export interface CompilerOptionJSON extends CommandLineOptionBase {
   hostObj: string;
 }
 
-const tsconfigOpts = require(join(__dirname, "../../data/tsconfigOpts.json"))
-  .options as CompilerOptionJSON[];
+const tsconfigOpts: CompilerOptionJSON[] = JSON.parse(readFileSync(join("data", "tsconfigOpts.json"), "utf8"));
 
 const notCompilerFlags = [
   // @ts-ignore
@@ -69,7 +73,7 @@ filteredOptions.forEach((option) => {
   // Convert JS Map types to a JSONable obj
   if ("type" in option && typeof option.type === "object" && "get" in option.type) {
     // Option definitely has a map obj, need to resolve it
-    const newOptions = {};
+    const newOptions: Record<string, any> = {};
     option.type.forEach((v, k) => (newOptions[k] = v));
     // @ts-ignore
     option.type = newOptions;
@@ -84,15 +88,16 @@ filteredOptions.forEach((option) => {
   }
 
   if (name in allowedValues) {
-    option.allowedValues = allowedValues[name];
+    option.allowedValues = (allowedValues as any)[name];
   }
 
   if (name in configToRelease) {
-    option.releaseVersion = configToRelease[name];
+    option.releaseVersion = (configToRelease as any)[name];
   }
 
   if (name in defaultsForOptions) {
-    option.defaultValue = defaultsForOptions[name];
+    const defaultValue = (defaultsForOptions as any)[name];
+    option.defaultValue = Array.isArray(defaultValue) ? defaultValue.join(" ") : defaultValue;
   }
 
   delete option.shortName;

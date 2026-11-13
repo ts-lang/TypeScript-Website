@@ -28,6 +28,7 @@
     &:hover {
       background-color: $ts-light-bg-grey;
     }
+
     &:active {
       background-color: $ts-light-bg-grey-highlight-color;
       margin-bottom: 19px;
@@ -36,6 +37,10 @@
 
   @media screen and (-ms-high-contrast: active) {
     border: 1px solid grey;
+
+    svg path {
+      fill: white;
+    }
   }
 
   &.headline {
@@ -91,16 +96,20 @@
 }
 
 .columns {
-  // 2 for the container, 0.6 for the item
-  margin: 0 -2.6rem;
+  margin: 0 -2rem;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
 
   &.wide {
     justify-content: space-between;
+
     .item {
       min-width: 240px;
+
+      @media (max-width: $screen-sm) {
+        min-width: 0;
+      }
     }
   }
 

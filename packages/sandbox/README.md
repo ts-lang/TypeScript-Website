@@ -17,10 +17,8 @@ This project is useful to you if:
 
 ## Builds
 
-This library currently ships as an AMD module. This is the same format that vscode/monaco use, and so you can use
-the same runtime loader patterns for importing into your web page. It is not a goal to provide ESM builds so people
-can run JS packagers over the project. If someone can make that work and have tests which validate it doesn't break,
-we'll accept it.
+This library is published to the CDN as an AMD module. This is the same format that vscode/monaco use, and so you can use
+the same runtime loader patterns for importing into your web page. This package is also available as an ESM and CJS module on NPM.
 
 ## Installation
 
@@ -43,11 +41,11 @@ we'll accept it.
 
       // For the monaco version you can use unpkg or the TypeScript web infra CDN
       // You can see the available releases for TypeScript here:
-      // https://typescript.azureedge.net/indexes/releases.json
+      // https://playgroundcdn.typescriptlang.org/indexes/releases.json
       //
       require.config({
         paths: {
-          vs: "https://typescript.azureedge.net/cdn/4.0.5/monaco/min/vs",
+          vs: "https://playgroundcdn.typescriptlang.org/cdn/4.0.5/monaco/min/vs",
           // vs: 'https://unpkg.com/@typescript-deploys/monaco-editor@4.0.5/min/vs',
           sandbox: "https://www.typescriptlang.org/js/sandbox",
         },
@@ -83,14 +81,14 @@ export default async function () {
           return
         }
 
-        // Create a sandbox and embed it into the the div #monaco-editor-embed
+        // Create a sandbox and embed it into the div #monaco-editor-embed
         const sandboxConfig = {
           text: initialCode,
           compilerOptions: {},
           domID: "monaco-editor-embed",
         }
 
-        sandboxFactory.createTypeScriptSandbox(sandboxConfig, main, window.ts)
+        const sandbox = sandboxFactory.createTypeScriptSandbox(sandboxConfig, main, window.ts)
         sandbox.editor.focus()
       })
     }

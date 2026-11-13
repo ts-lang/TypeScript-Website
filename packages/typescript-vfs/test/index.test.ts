@@ -21,22 +21,25 @@ it("runs a virtual environment and gets the right results from the LSP", () => {
   // You can then interact with the languageService to introspect the code
   const definitions = env.languageService.getDefinitionAtPosition("index.ts", 7)
   expect(definitions).toMatchInlineSnapshot(`
-    Array [
-      Object {
+    [
+      {
         "containerKind": undefined,
         "containerName": "",
-        "contextSpan": Object {
+        "contextSpan": {
           "length": 18,
           "start": 0,
         },
+        "failedAliasResolution": false,
         "fileName": "index.ts",
+        "isAmbient": false,
         "isLocal": false,
         "kind": "const",
         "name": "hello",
-        "textSpan": Object {
+        "textSpan": {
           "length": 5,
           "start": 6,
         },
+        "unverified": false,
       },
     ]
   `)
@@ -132,7 +135,7 @@ it("creates a map from the CDN and stores it in local storage cache", async () =
 
   libs.forEach(l => expect(map.get("/" + l)).toBeDefined())
 
-  expect(store.setItem).toBeCalledTimes(libs.length)
+  expect(store.setItem).toHaveBeenCalledTimes(libs.length)
 })
 
 it("creates a map from the CDN and uses the existing local storage cache", async () => {
@@ -157,7 +160,7 @@ it("creates a map from the CDN and uses the existing local storage cache", async
   libs.forEach(l => expect(map.get("/" + l)).toBeDefined())
 
   // Should be one less fetch, and the first item would be from the cache instead
-  expect(store.setItem).toBeCalledTimes(libs.length - 1)
+  expect(store.setItem).toHaveBeenCalledTimes(libs.length - 1)
   expect(map.get("/" + libs[0])).toMatchInlineSnapshot(`"// From Cache"`)
 })
 
@@ -205,4 +208,40 @@ it("throws when you request a lib file which isn't in the fsMap", () => {
   }
 
   expect(t).toThrow()
+})
+
+it("grabs lib dts files from node_modules", async () => {
+  const fsMap = createDefaultMapFromNodeModules({})
+  expect(fsMap.get("/lib.es2015.collection.d.ts")).toBeDefined()
+})
+
+it("empty file content", async () => {
+  const options = { target: ts.ScriptTarget.ES2020 }
+  const fsMap = createDefaultMapFromNodeModules(options, ts)
+  fsMap.set("index.ts", "")
+  const system = createSystem(fsMap)
+  const host = createVirtualCompilerHost(system, options, ts)
+  ts.createProgram({
+    rootNames: ["index.ts"],
+    options,
+    host: host.compilerHost,
+  })
+})
+
+it("moduleDetection options", async () => {
+  const options: ts.CompilerOptions = {
+    module: ts.ModuleKind.AMD,
+    moduleDetection: ts.ModuleDetectionKind.Force,
+  }
+  const fsMap = createDefaultMapFromNodeModules(options, ts)
+  fsMap.set("index.ts", "let foo = 'foo'")
+  const system = createSystem(fsMap)
+  const host = createVirtualCompilerHost(system, options, ts)
+  const program = ts.createProgram({
+    rootNames: ["index.ts"],
+    options,
+    host: host.compilerHost,
+  })
+  program.emit()
+  expect(fsMap.get("index.js")).toEqual(`define(["require", "exports"], function (require, exports) {\n    "use strict";\n    Object.defineProperty(exports, "__esModule", { value: true });\n    let foo = 'foo';\n});\n`)
 })

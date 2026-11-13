@@ -19,17 +19,18 @@ const Index: React.FC<Props> = (props) => {
 
   return <Layout title="Reference Tools" description="Online tooling to help you understand TypeScript" lang={props.pageContext.lang}>
     <div className="raised main-content-block">
+      <h1>Reference Tools</h1>
       <Row>
         <Col>
-          <a className="cropper" href="../play/">
+          <a className="cropper" href="/play">
             <img src={require("../../../static/images/tools/play.png").default} alt="Preview of the TypeScript Playground screenshot" />
             <p>Playground</p>
           </a>
           <p>A live environment for exploring, learning and sharing TypeScript code. Try different compiler flags, run through extensive code samples to learn specifics about how TypeScript works.</p>
         </Col>
         <Col>
-          <Link className="cropper" to="/tsconfig">
-            <img src={require("../../../static/images/tools/tsconfig-ref.png").default} alt="Preview of the TypeScript TSConfig Reference screenshot" />
+          <Link className="cropper" to="/tsconfig" aria-label="Preview of the TypeScript TSConfig Reference screenshot">
+            <img src={require("../../../static/images/tools/tsconfig-ref.png").default} aria-hidden="true" />
             <p>TSConfig Reference</p>
           </Link>
           <p>An annotated reference to more than a hundred compiler options available in a <code>tsconfig.json</code> or <code>jsconfig.json</code>.</p>
@@ -37,13 +38,12 @@ const Index: React.FC<Props> = (props) => {
       </Row>
       <Row>
         <Col>
-          <a className="cropper" href="../dt/search">
-            <img src={require("../../../static/images/tools/dt-search.png").default} alt="Preview of the Definitely Typed search" />
-            <p>Type Search</p>
+          <a className="cropper" href="/cheatsheets">
+            <img src={require("../../../static/images/tools/cheat-sheets.png").default} alt="Preview of the cheat sheets page" />
+            <p>Cheat Sheets</p>
           </a>
-          <p>Search for npm modules with types from DefinitelyTyped or embedded in the module.</p>
+          <p>Quickly look up the syntax for common TypeScript code.</p>
         </Col>
-        <Col>&nbsp;</Col>
       </Row>
     </div>
 

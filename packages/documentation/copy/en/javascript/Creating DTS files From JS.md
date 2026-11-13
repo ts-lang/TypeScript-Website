@@ -47,7 +47,10 @@ In this case, you will want a file like the following:
     // Types should go into this directory.
     // Removing this would place the .d.ts files
     // next to the .js files
-    "outDir": "dist"
+    "outDir": "dist",
+    // go to js file when using IDE functions like
+    // "Go to Definition" in VSCode
+    "declarationMap": true
   }
 }
 ```
@@ -56,7 +59,7 @@ You can learn more about the options in the [tsconfig reference](/tsconfig).
 An alternative to using a TSConfig file is the CLI, this is the same behavior as a CLI command.
 
 ```sh
-npx typescript src/**/*.js --declaration --allowJs --emitDeclarationOnly --outDir types
+npx -p typescript tsc src/**/*.js --declaration --allowJs --emitDeclarationOnly --outDir types
 ```
 
 ## Run the compiler
@@ -67,7 +70,7 @@ You want to make sure these files are included in your package if you have the f
 ## Editing the package.json
 
 TypeScript replicates the node resolution for modules in a `package.json`, with an additional step for finding .d.ts files.
-Roughly, the resolution will first check the optional `"types"` field, then the `"main"` field, and finally will try `index.d.ts` in the root.
+Roughly, the resolution will first check the optional `types` field, then the `"main"` field, and finally will try `index.d.ts` in the root.
 
 | Package.json              | Location of default .d.ts      |
 | :------------------------ | :----------------------------- |
@@ -85,4 +88,4 @@ If absent, then "main" is used
 
 ## Tips
 
-If you'd like to write tests for your .d.ts files, try [tsd](https://github.com/SamVerschueren/tsd).
+If you'd like to write tests for your .d.ts files, try [tsd](https://github.com/SamVerschueren/tsd) or [TSTyche](https://github.com/tstyche/tstyche).

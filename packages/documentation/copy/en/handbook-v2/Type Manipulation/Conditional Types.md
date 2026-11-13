@@ -79,7 +79,7 @@ type NameOrId<T extends number | string> = T extends number
   : NameLabel;
 ```
 
-We can then use that conditional type to simplify out overloads down to a single function with no overloads.
+We can then use that conditional type to simplify our overloads down to a single function with no overloads.
 
 ```ts twoslash
 interface IdLabel {
@@ -106,10 +106,10 @@ let c = createLabel(Math.random() ? "hello" : 42);
 //  ^?
 ```
 
-### Conditional Type Constraints
+## Conditional Type Constraints
 
 Often, the checks in a conditional type will provide us with some new information.
-Just like with narrowing with type guards can give us a more specific type, the true branch of a conditional type will further constraint generics by the type we check against.
+Just like narrowing with type guards can give us a more specific type, the true branch of a conditional type will further constrain generics by the type we check against.
 
 For example, let's take the following:
 
@@ -126,10 +126,6 @@ type MessageOf<T extends { message: unknown }> = T["message"];
 
 interface Email {
   message: string;
-}
-
-interface Dog {
-  bark(): void;
 }
 
 type EmailMessageContents = MessageOf<Email>;
@@ -176,7 +172,7 @@ type Num = Flatten<number>;
 When `Flatten` is given an array type, it uses an indexed access with `number` to fetch out `string[]`'s element type.
 Otherwise, it just returns the type it was given.
 
-### Inferring Within Conditional Types
+## Inferring Within Conditional Types
 
 We just found ourselves using conditional types to apply constraints and then extract out types.
 This ends up being such a common operation that conditional types make it easier.
@@ -188,7 +184,7 @@ For example, we could have inferred the element type in `Flatten` instead of fet
 type Flatten<Type> = Type extends Array<infer Item> ? Item : Type;
 ```
 
-Here, we used the `infer` keyword to declaratively introduce a new generic type variable named `Item` instead of specifying how to retrieve the element type of `T` within the true branch.
+Here, we used the `infer` keyword to declaratively introduce a new generic type variable named `Item` instead of specifying how to retrieve the element type of `Type` within the true branch.
 This frees us from having to think about how to dig through and probing apart the structure of the types we're interested in.
 
 We can write some useful helper type aliases using the `infer` keyword.
@@ -238,7 +234,7 @@ type StrArrOrNumArr = ToArray<string | number>;
 //   ^?
 ```
 
-What happens here is that `StrOrNumArray` distributes on:
+What happens here is that `ToArray` distributes on:
 
 ```ts twoslash
 type StrArrOrNumArr =
@@ -269,7 +265,7 @@ To avoid that behavior, you can surround each side of the `extends` keyword with
 ```ts twoslash
 type ToArrayNonDist<Type> = [Type] extends [any] ? Type[] : never;
 
-// 'StrOrNumArr' is no longer a union.
-type StrOrNumArr = ToArrayNonDist<string | number>;
+// 'ArrOfStrOrNum' is no longer a union.
+type ArrOfStrOrNum = ToArrayNonDist<string | number>;
 //   ^?
 ```

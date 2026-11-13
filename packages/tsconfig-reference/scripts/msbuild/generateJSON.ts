@@ -1,16 +1,28 @@
-//  yarn workspace tsconfig-reference generate:msbuild:schema
+// pnpm run --filter=tsconfig-reference generate:msbuild:schema
 
-import parser = require("xml-js");
+console.log("TSConfig Ref: JSON for MSBuild");
+
+import parser from "xml-js";
 import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
-import { format } from "prettier";
+import prettier from "prettier";
 
-const toJSONString = (obj) => format(JSON.stringify(obj, null, "  "), { filepath: "thing.json" });
-const writeJSON = (name, obj) =>
-  writeFileSync(join(__dirname, "..", "..", "data", name), toJSONString(obj));
+const toJSONString = (obj: any) =>
+  prettier.format(JSON.stringify(obj, null, "  "), { filepath: "thing.json" });
+const writeJSON = (name: string, obj: any) =>
+  writeFileSync(
+    new URL(`../../data/${name}`, import.meta.url),
+    toJSONString(obj)
+  );
 
-const targetsXMLText = readFileSync(join(__dirname, "./Microsoft.TypeScript.targets"), "utf8");
-const targetJSONtext = parser.xml2json(targetsXMLText, { compact: true, spaces: 4 });
+const targetsXMLText = readFileSync(
+  new URL("./Microsoft.TypeScript.targets", import.meta.url),
+  "utf8"
+);
+const targetJSONtext = parser.xml2json(targetsXMLText, {
+  compact: true,
+  spaces: 4,
+});
 const targets = JSON.parse(targetJSONtext) as import("./types").Target;
 
 const config = targets.Project.PropertyGroup.find((f) => f.TypeScriptBuildConfigurations?.length);
@@ -22,10 +34,10 @@ if (!config) {
 
 const skip = ["TypeScriptCodePage", "TypeScriptExperimentalAsyncFunctions", "TypeScriptOutFile"];
 
-const json = config.TypeScriptBuildConfigurations.map((config) => {
+const json = config.TypeScriptBuildConfigurations!.map((config) => {
   const tscCLIName =
     config._text.includes("--") && config._text.trim().slice(2).split("--")[1].split(" ")[0];
-  const configName = config._attributes.Condition.split("(")[1].split(")")[0];
+  const configName = config._attributes!.Condition.split("(")[1].split(")")[0];
 
   return {
     tscCLIName,

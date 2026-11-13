@@ -1,7 +1,25 @@
 // @ts-check
 
-// A script which uses Facebook's watchman to run `yarn build` in different modules
+// A script which uses Facebook's watchman to run `pnpm build` in different modules
 // in a standard monorepo.
+
+const { spawnSync } = require("child_process")
+
+const help = spawnSync("watchman", ["--help"])
+const hasWatchman = !help.error
+
+if (!hasWatchman) {
+  const showError = process.env.DEBUG
+  const suffix = !showError ? "Run with DEBUG=* to see the error logs." : ""
+  // prettier-ignore
+  console.log(`Watchman failed to load, this is _OK_ but you will not get automatic builds of sub-projects like the tsconfig reference or playground. ` + suffix)
+
+  if (showError) {
+    console.error(help.error)
+  }
+
+  process.exit(0)
+}
 
 const watchman = require("fb-watchman")
 const client = new watchman.Client({})
@@ -40,7 +58,7 @@ let currentProcess = null
 // for the project which looks only at .ts and .md files in the repo.
 
 // Startup watchman
-client.command(["watch-project", process.cwd()], function (error, resp) {
+function watcher(error, resp) {
   if (error) {
     console.error("Error initiating watch:", error)
     return
@@ -103,8 +121,8 @@ client.command(["watch-project", process.cwd()], function (error, resp) {
       const packageJSON = JSON.parse(readFileSync(packageJSONPath, "utf8"))
       if (!packageJSON.scripts || !packageJSON.scripts.build) return
 
-      const buildCommand = `workspace ${packageJSON.name} run build`
-      return buildCommand
+      if (packageJSON.scripts["build-fast"]) return `--filter=${packageJSON.name} run build-fast`
+      return `--filter=${packageJSON.name} run build`
     })
 
     if (commandToRun[0]) {
@@ -115,7 +133,7 @@ client.command(["watch-project", process.cwd()], function (error, resp) {
       }
     }
   })
-})
+}
 
 // @ts-ignore
 client.on("end", function () {
@@ -128,7 +146,7 @@ client.on("error", function (error) {
   console.error("Error while talking to watchman: ", error)
 })
 
-client.capabilityCheck({ required: ["relative_root"] }, function (error, resp) {
+client.capabilityCheck({ required: ["relative_root"], optional: [] }, function (error, resp) {
   if (error) {
     console.error("Error checking capabilities:", error)
     return
@@ -140,10 +158,10 @@ const runCommand = argString => {
   if (currentProcess) return
 
   const prefix = chalk.gray("> ")
-  const cmd = chalk.bold("yarn " + argString)
+  const cmd = chalk.bold("pnpm " + argString)
   log(prefix + cmd)
 
-  const build = spawn("yarn", argString.split(" "))
+  const build = spawn("pnpm", argString.split(" "))
   build.stdout.on("data", l => {
     if (l.toString().includes("Done in")) return
     log("  " + l.toString().trim())
@@ -174,3 +192,4 @@ const runCommand = argString => {
 }
 
 const playCommand = (path, volume) => `afplay \"${path}\" -v ${volume}`
+client.command(["watch-project", process.cwd()], watcher)

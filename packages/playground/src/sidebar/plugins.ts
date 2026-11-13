@@ -23,10 +23,6 @@ export const addCustomPlugin = (mod: string) => {
   const newPlugins = customPlugins()
   newPlugins.push(mod)
   localStorage.setItem("custom-plugins-playground", JSON.stringify(newPlugins))
-  // @ts-ignore
-  window.appInsights &&
-    // @ts-ignore
-    window.appInsights.trackEvent({ name: "Added Custom Module", properties: { id: mod } })
 }
 
 const customPlugins = (): string[] => {
@@ -81,7 +77,7 @@ export const optionsPlugin: PluginFactory = (i, utils) => {
         }
         customPlugins().forEach(module => {
           const li = document.createElement("li")
-          li.innerHTML = module
+          li.textContent = module
           const a = document.createElement("a")
           a.href = "#"
           a.textContent = "X"
@@ -127,15 +123,33 @@ export const optionsPlugin: PluginFactory = (i, utils) => {
 
     const label = document.createElement("label")
 
-    // Avoid XSS by someone injecting JS via the description, which is the only free text someone can use
-    var p = document.createElement("p")
-    p.appendChild(document.createTextNode(plugin.description))
-    const escapedDescription = p.innerHTML
+    const pluginName = document.createElement("span")
+    pluginName.textContent = plugin.name
+    label.appendChild(pluginName)
 
-    const top = `<span>${plugin.name}</span> by <a href='https://www.npmjs.com/~${plugin.author}'>${plugin.author}</a><br/>${escapedDescription}`
-    const repo = plugin.href.includes("github") ? `| <a href="${plugin.href}">repo</a>` : ""
-    const bottom = `<a href='https://www.npmjs.com/package/${plugin.id}'>npm</a> ${repo}`
-    label.innerHTML = `${top}<br/>${bottom}`
+    label.appendChild(document.createTextNode(" by "))
+
+    const author = document.createElement("a")
+    author.href = `https://www.npmjs.com/~${plugin.author}`
+    author.textContent = plugin.author
+    label.appendChild(author)
+
+    label.appendChild(document.createElement("br"))
+    label.appendChild(document.createTextNode(plugin.description))
+    label.appendChild(document.createElement("br"))
+
+    const npm = document.createElement("a")
+    npm.href = `https://www.npmjs.com/package/${plugin.id}`
+    npm.textContent = "npm"
+    label.appendChild(npm)
+
+    if (plugin.href.includes("github")) {
+      label.appendChild(document.createTextNode(" | "))
+      const repo = document.createElement("a")
+      repo.href = plugin.href
+      repo.textContent = "repo"
+      label.appendChild(repo)
+    }
 
     const key = "plugin-" + plugin.id
     const input = document.createElement("input")
@@ -147,10 +161,6 @@ export const optionsPlugin: PluginFactory = (i, utils) => {
       const ds = utils.createDesignSystem(div)
       ds.declareRestartRequired(i)
       if (input.checked) {
-        // @ts-ignore
-        window.appInsights &&
-          // @ts-ignore
-          window.appInsights.trackEvent({ name: "Added Registry Plugin", properties: { id: key } })
         localStorage.setItem(key, "true")
       } else {
         localStorage.removeItem(key)

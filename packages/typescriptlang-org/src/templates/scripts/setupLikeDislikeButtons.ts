@@ -4,21 +4,20 @@ export const setupLikeDislikeButtons = (slug: string, i: any) => {
   if (!likeButton || !dislikeButton) return
 
   const clicked = (eventName: string) => () => {
-    // @ts-ignore
-    window.appInsights &&
-      // @ts-ignore
-      window.appInsights.trackEvent({
-        name: eventName,
-        properties: { slug: slug, ab: "b" },
-      })
-
     const newContent: string = i("handb_thanks")
 
     const textSectionNav = document.getElementById("like-dislike-subnav")!
     const popoverPopup = document.getElementById("page-helpful-popup")!
 
-    textSectionNav.innerHTML = `<h5>${newContent}</h5>`
-    popoverPopup.innerHTML = `<p>${newContent}</p>`
+    textSectionNav.textContent = ""
+    const thanksHeader = document.createElement("h5")
+    thanksHeader.textContent = newContent
+    textSectionNav.appendChild(thanksHeader)
+
+    popoverPopup.textContent = ""
+    const thanksParagraph = document.createElement("p")
+    thanksParagraph.textContent = newContent
+    popoverPopup.appendChild(thanksParagraph)
   }
 
   likeButton.onclick = clicked("Liked Page")
@@ -55,7 +54,7 @@ export const setupLikeDislikeButtons = (slug: string, i: any) => {
 
       const popupOpacity = bottomOfWindow ? "1" : "0"
       if (popup.style.opacity != popupOpacity) {
-        // popup.style.display = bottomOfWindow ? "block" : "none"
+        popup.style.display = bottomOfWindow ? "block" : "none"
         popup.style.opacity = popupOpacity
       }
 

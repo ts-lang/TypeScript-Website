@@ -8,11 +8,44 @@ translatable: true
 
 TypeScript provides several utility types to facilitate common type transformations. These utilities are available globally.
 
+## `Awaited<Type>`
+
+<blockquote class=bg-reading>
+
+Released:
+[4.5](/docs/handbook/release-notes/typescript-4-5.html#the-awaited-type-and-promise-improvements)
+
+</blockquote>
+
+This type is meant to model operations like `await` in `async` functions, or the
+`.then()` method on `Promise`s - specifically, the way that they recursively
+unwrap `Promise`s.
+
+### Example
+
+```ts twoslash
+type A = Awaited<Promise<string>>;
+//   ^?
+
+type B = Awaited<Promise<Promise<number>>>;
+//   ^?
+
+type C = Awaited<boolean | Promise<number>>;
+//   ^?
+```
+
 ## `Partial<Type>`
+
+<blockquote class=bg-reading>
+
+Released:  
+[2.1](/docs/handbook/release-notes/typescript-2-1.html#partial-readonly-record-and-pick)
+
+</blockquote>
 
 Constructs a type with all properties of `Type` set to optional. This utility will return a type that represents all subsets of a given type.
 
-##### Example
+### Example
 
 ```ts twoslash
 interface Todo {
@@ -36,9 +69,16 @@ const todo2 = updateTodo(todo1, {
 
 ## `Required<Type>`
 
+<blockquote class=bg-reading>
+
+Released:  
+[2.8](/docs/handbook/release-notes/typescript-2-8.html#improved-control-over-mapped-type-modifiers)
+
+</blockquote>
+
 Constructs a type consisting of all properties of `Type` set to required. The opposite of [`Partial`](#partialtype).
 
-##### Example
+### Example
 
 ```ts twoslash
 // @errors: 2741
@@ -54,9 +94,16 @@ const obj2: Required<Props> = { a: 5 };
 
 ## `Readonly<Type>`
 
+<blockquote class=bg-reading>
+
+Released:  
+[2.1](/docs/handbook/release-notes/typescript-2-1.html#partial-readonly-record-and-pick)
+
+</blockquote>
+
 Constructs a type with all properties of `Type` set to `readonly`, meaning the properties of the constructed type cannot be reassigned.
 
-##### Example
+### Example
 
 ```ts twoslash
 // @errors: 2540
@@ -73,25 +120,32 @@ todo.title = "Hello";
 
 This utility is useful for representing assignment expressions that will fail at runtime (i.e. when attempting to reassign properties of a [frozen object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze)).
 
-##### `Object.freeze`
+### `Object.freeze`
 
 ```ts
 function freeze<Type>(obj: Type): Readonly<Type>;
 ```
 
-## `Record<Keys,Type>`
+## `Record<Keys, Type>`
+
+<blockquote class=bg-reading>
+
+Released:  
+[2.1](/docs/handbook/release-notes/typescript-2-1.html#partial-readonly-record-and-pick)
+
+</blockquote>
 
 Constructs an object type whose property keys are `Keys` and whose property values are `Type`. This utility can be used to map the properties of a type to another type.
 
-##### Example
+### Example
 
 ```ts twoslash
+type CatName = "miffy" | "boris" | "mordred";
+
 interface CatInfo {
   age: number;
   breed: string;
 }
-
-type CatName = "miffy" | "boris" | "mordred";
 
 const cats: Record<CatName, CatInfo> = {
   miffy: { age: 10, breed: "Persian" },
@@ -105,9 +159,16 @@ cats.boris;
 
 ## `Pick<Type, Keys>`
 
+<blockquote class=bg-reading>
+
+Released:  
+[2.1](/docs/handbook/release-notes/typescript-2-1.html#partial-readonly-record-and-pick)
+
+</blockquote>
+
 Constructs a type by picking the set of properties `Keys` (string literal or union of string literals) from `Type`.
 
-##### Example
+### Example
 
 ```ts twoslash
 interface Todo {
@@ -129,9 +190,16 @@ todo;
 
 ## `Omit<Type, Keys>`
 
-Constructs a type by picking all properties from `Type` and then removing `Keys` (string literal or union of string literals).
+<blockquote class=bg-reading>
 
-##### Example
+Released:  
+[3.5](/docs/handbook/release-notes/typescript-3-5.html#the-omit-helper-type)
+
+</blockquote>
+
+Constructs a type by picking all properties from `Type` and then removing `Keys` (string literal or union of string literals). The opposite of [`Pick`](#picktype-keys).
+
+### Example
 
 ```ts twoslash
 interface Todo {
@@ -163,11 +231,18 @@ todoInfo;
 // ^?
 ```
 
-## `Exclude<Type, ExcludedUnion>`
+## `Exclude<UnionType, ExcludedMembers>`
 
-Constructs a type by excluding from `Type` all union members that are assignable to `ExcludedUnion`.
+<blockquote class=bg-reading>
 
-##### Example
+Released:  
+[2.8](/docs/handbook/release-notes/typescript-2-8.html#predefined-conditional-types)
+
+</blockquote>
+
+Constructs a type by excluding from `UnionType` all union members that are assignable to `ExcludedMembers`.
+
+### Example
 
 ```ts twoslash
 type T0 = Exclude<"a" | "b" | "c", "a">;
@@ -176,26 +251,56 @@ type T1 = Exclude<"a" | "b" | "c", "a" | "b">;
 //    ^?
 type T2 = Exclude<string | number | (() => void), Function>;
 //    ^?
+
+type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; x: number }
+  | { kind: "triangle"; x: number; y: number };
+
+type T3 = Exclude<Shape, { kind: "circle" }>
+//    ^?
 ```
 
 ## `Extract<Type, Union>`
 
+<blockquote class=bg-reading>
+
+Released:  
+[2.8](/docs/handbook/release-notes/typescript-2-8.html#predefined-conditional-types)
+
+</blockquote>
+
 Constructs a type by extracting from `Type` all union members that are assignable to `Union`.
 
-##### Example
+### Example
 
 ```ts twoslash
 type T0 = Extract<"a" | "b" | "c", "a" | "f">;
 //    ^?
 type T1 = Extract<string | number | (() => void), Function>;
 //    ^?
+
+type Shape =
+  | { kind: "circle"; radius: number }
+  | { kind: "square"; x: number }
+  | { kind: "triangle"; x: number; y: number };
+
+type T2 = Extract<Shape, { kind: "circle" }>
+//    ^?
 ```
 
 ## `NonNullable<Type>`
 
+<blockquote class=bg-reading>
+
+Released:  
+[2.8](/docs/handbook/release-notes/typescript-2-8.html#predefined-conditional-types)
+
+</blockquote>
+
 Constructs a type by excluding `null` and `undefined` from `Type`.
 
-##### Example
+### Example
 
 ```ts twoslash
 type T0 = NonNullable<string | number | undefined>;
@@ -206,9 +311,18 @@ type T1 = NonNullable<string[] | null | undefined>;
 
 ## `Parameters<Type>`
 
+<blockquote class=bg-reading>
+
+Released:  
+[3.1](https://github.com/microsoft/TypeScript/pull/26243)
+
+</blockquote>
+
 Constructs a tuple type from the types used in the parameters of a function type `Type`.
 
-##### Example
+For overloaded functions, this will be the parameters of the _last_ signature; see [Inferring Within Conditional Types](/docs/handbook/2/conditional-types.html#inferring-within-conditional-types).
+
+### Example
 
 ```ts twoslash
 // @errors: 2344
@@ -234,9 +348,16 @@ type T7 = Parameters<Function>;
 
 ## `ConstructorParameters<Type>`
 
+<blockquote class=bg-reading>
+
+Released:  
+[3.1](https://github.com/microsoft/TypeScript/pull/26243)
+
+</blockquote>
+
 Constructs a tuple or array type from the types of a constructor function type. It produces a tuple type with all the parameter types (or the type `never` if `Type` is not a function).
 
-##### Example
+### Example
 
 ```ts twoslash
 // @errors: 2344
@@ -247,18 +368,32 @@ type T1 = ConstructorParameters<FunctionConstructor>;
 //    ^?
 type T2 = ConstructorParameters<RegExpConstructor>;
 //    ^?
-type T3 = ConstructorParameters<any>;
+class C {
+  constructor(a: number, b: string) {}
+}
+type T3 = ConstructorParameters<typeof C>;
+//    ^?
+type T4 = ConstructorParameters<any>;
 //    ^?
 
-type T4 = ConstructorParameters<Function>;
+type T5 = ConstructorParameters<Function>;
 //    ^?
 ```
 
 ## `ReturnType<Type>`
 
+<blockquote class=bg-reading>
+
+Released:  
+[2.8](/docs/handbook/release-notes/typescript-2-8.html#predefined-conditional-types)
+
+</blockquote>
+
 Constructs a type consisting of the return type of function `Type`.
 
-##### Example
+For overloaded functions, this will be the return type of the _last_ signature; see [Inferring Within Conditional Types](/docs/handbook/2/conditional-types.html#inferring-within-conditional-types).
+
+### Example
 
 ```ts twoslash
 // @errors: 2344 2344
@@ -286,9 +421,16 @@ type T8 = ReturnType<Function>;
 
 ## `InstanceType<Type>`
 
+<blockquote class=bg-reading>
+
+Released:  
+[2.8](/docs/handbook/release-notes/typescript-2-8.html#predefined-conditional-types)
+
+</blockquote>
+
 Constructs a type consisting of the instance type of a constructor function in `Type`.
 
-##### Example
+### Example
 
 ```ts twoslash
 // @errors: 2344 2344
@@ -310,11 +452,44 @@ type T4 = InstanceType<Function>;
 //    ^?
 ```
 
+## `NoInfer<Type>`
+
+<blockquote class=bg-reading>
+
+Released:  
+[5.4](/docs/handbook/release-notes/typescript-5-4.html#the-noinfer-utility-type)
+
+</blockquote>
+
+Blocks inferences to the contained type. Other than blocking inferences, `NoInfer<Type>` is
+identical to `Type`.
+
+### Example
+
+```ts
+function createStreetLight<C extends string>(
+  colors: C[],
+  defaultColor?: NoInfer<C>,
+) {
+  // ...
+}
+
+createStreetLight(["red", "yellow", "green"], "red");  // OK
+createStreetLight(["red", "yellow", "green"], "blue");  // Error
+```
+
 ## `ThisParameterType<Type>`
+
+<blockquote class=bg-reading>
+
+Released:  
+[3.3](https://github.com/microsoft/TypeScript/pull/28920)
+
+</blockquote>
 
 Extracts the type of the [this](/docs/handbook/functions.html#this-parameters) parameter for a function type, or [unknown](/docs/handbook/release-notes/typescript-3-0.html#new-unknown-top-type) if the function type has no `this` parameter.
 
-##### Example
+### Example
 
 ```ts twoslash
 function toHex(this: Number) {
@@ -328,9 +503,16 @@ function numberToString(n: ThisParameterType<typeof toHex>) {
 
 ## `OmitThisParameter<Type>`
 
+<blockquote class=bg-reading>
+
+Released:  
+[3.3](https://github.com/microsoft/TypeScript/pull/28920)
+
+</blockquote>
+
 Removes the [`this`](/docs/handbook/functions.html#this-parameters) parameter from `Type`. If `Type` has no explicitly declared `this` parameter, the result is simply `Type`. Otherwise, a new function type with no `this` parameter is created from `Type`. Generics are erased and only the last overload signature is propagated into the new function type.
 
-##### Example
+### Example
 
 ```ts twoslash
 function toHex(this: Number) {
@@ -344,12 +526,19 @@ console.log(fiveToHex());
 
 ## `ThisType<Type>`
 
-This utility does not return a transformed type. Instead, it serves as a marker for a contextual [`this`](/docs/handbook/functions.html#this) type. Note that the `--noImplicitThis` flag must be enabled to use this utility.
+<blockquote class=bg-reading>
 
-##### Example
+Released:  
+[2.3](https://github.com/microsoft/TypeScript/pull/14141)
+
+</blockquote>
+
+This utility does not return a transformed type. Instead, it serves as a marker for a contextual [`this`](/docs/handbook/functions.html#this) type. Note that the [`noImplicitThis`](/tsconfig#noImplicitThis) flag must be enabled to use this utility.
+
+### Example
 
 ```ts twoslash
-// @noImplicitThis: false
+// @noImplicitThis: true
 type ObjectDescriptor<D, M> = {
   data?: D;
   methods?: M & ThisType<D & M>; // Type of 'this' in methods is D & M
@@ -376,7 +565,7 @@ obj.y = 20;
 obj.moveBy(5, 5);
 ```
 
-In the example above, the `methods` object in the argument to `makeObject` has a contextual type that includes `ThisType<D & M>` and therefore the type of [this](/docs/handbook/functions.html#this) in methods within the `methods` object is `{ x: number, y: number } & { moveBy(dx: number, dy: number): number }`. Notice how the type of the `methods` property simultaneously is an inference target and a source for the `this` type in methods.
+In the example above, the `methods` object in the argument to `makeObject` has a contextual type that includes `ThisType<D & M>` and therefore the type of [this](/docs/handbook/functions.html#this) in methods within the `methods` object is `{ x: number, y: number } & { moveBy(dx: number, dy: number): void }`. Notice how the type of the `methods` property simultaneously is an inference target and a source for the `this` type in methods.
 
 The `ThisType<T>` marker interface is simply an empty interface declared in `lib.d.ts`. Beyond being recognized in the contextual type of an object literal, the interface acts like any empty interface.
 

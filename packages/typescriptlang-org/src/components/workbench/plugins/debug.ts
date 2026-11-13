@@ -24,8 +24,10 @@ export const workbenchDebugPlugin: PluginFactory = (i, utils) => {
       const ds = utils.createDesignSystem(pluginContainer)
       ds.clear()
 
-      ds.p(
-        "This tab shows the raw data passed back from Twoslash. This can be useful in debugging if something isn't working as you would expect. That said, if you're struggling with a repro - ask in the <a href='https://discord.gg/typescript'>#compiler channel of the TypeScript Discord</a>."
+      ds.pWithChildren(
+        "This tab shows the raw data passed back from Twoslash. This can be useful in debugging if something isn't working as you would expect. That said, if you're struggling with a repro - ask in the ",
+        ds.link("https://discord.gg/typescript", "#compiler-api channel of the TypeScript Discord"),
+        "."
       )
 
       ds.subtitle(`Output Code as ${results.extension}`)
@@ -45,12 +47,9 @@ export const workbenchDebugPlugin: PluginFactory = (i, utils) => {
         if (filename.startsWith("/lib.")) {
           dtsFiles.push(filename.replace("/lib", "lib"))
         } else {
-          ds.p("<code>" + filename + "</code>")
-
-          const p = ds.p("")
-          const code = document.createElement("code")
-          code.innerText = dtsMap.get(filename)!.trim()
-          p.appendChild(code)
+          const filenameElement = ds.p(filename)
+          filenameElement.style.fontWeight = "bold"
+          ds.code(dtsMap.get(filename)!.trim())
         }
       })
       ds.subtitle("Lib files")

@@ -1,17 +1,38 @@
 {
   "name": "@typescript/sandbox",
-  "version": "0.1.0",
-  "main": "dist/index.js",
-  "private": true,
+  "version": "0.1.16",
   "license": "MIT",
-  "types": "../../typescriptlang-org/static/js/sandbox/index.d.ts",
+  "author": "TypeScript team",
+  "homepage": "https://github.com/microsoft/TypeScript-Website",
+  "repository": {
+    "url": "https://github.com/microsoft/TypeScript-Website.git",
+    "directory": "packages/sandbox",
+    "type": "git"
+  },
+  "bugs": {
+    "url": "https://github.com/microsoft/TypeScript-Website/issues"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/sandbox.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/sandbox.esm.js",
+      "default": "./dist/index.js"
+    }
+  },
   "files": [
     "dist"
   ],
   "scripts": {
     "bootstrap": "node script/downloadReleases.js",
-    "build": "tsc",
+    "build": "dts build --tsconfig tsconfig.lib.json && pnpm make-for-website",
+    "make-for-website": "tsc",
     "test": "jest"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "jest": {
     "preset": "ts-jest",
@@ -22,14 +43,18 @@
     ]
   },
   "dependencies": {
-    "@typescript/vfs": "1.3.4"
+    "@typescript/ata": "workspace:*",
+    "@typescript/vfs": "workspace:*",
+    "lz-string": "^1.5.0"
   },
   "devDependencies": {
-    "@types/jest": "^25.1.3",
-    "jest": "*",
-    "monaco-editor": "~0.20.0",
-    "monaco-typescript": "^3.7.0",
-    "ts-jest": "^26.4.4",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@types/jest": "^30.0.0",
+    "dts-cli": "^2.0.5",
+    "jest": "^30.2.0",
+    "monaco-editor": "^0.32.1",
+    "monaco-typescript": "^4.10.0",
+    "ts-jest": "^29.4.6",
     "typescript": "*"
   }
 }

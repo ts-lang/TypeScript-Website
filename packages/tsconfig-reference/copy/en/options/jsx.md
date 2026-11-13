@@ -6,21 +6,21 @@ oneline: "Specify what JSX code is generated."
 Controls how JSX constructs are emitted in JavaScript files.
 This only affects output of JS files that started in `.tsx` files.
 
-- `react`: Emit `.js` files with JSX changed to the equivalent `React.createElement` calls
-- `react-jsx`: Emit `.js` files with the JSX changed to `_jsx` calls
-- `react-jsxdev`: Emit `.js` files with the JSX to `_jsx` calls
+- `react-jsx`: Emit `.js` files with the JSX changed to `_jsx` calls optimized for production
+- `react-jsxdev`: Emit `.js` files with the JSX changed to `_jsx` calls for development only
 - `preserve`: Emit `.jsx` files with the JSX unchanged
 - `react-native`: Emit `.js` files with the JSX unchanged
+- `react`: Emit `.js` files with JSX changed to the equivalent `React.createElement` calls
 
 ### For example
 
 This sample code:
 
 ```tsx
-export const helloWorld = () => <h1>Hello world</h1>;
+export const HelloWorld = () => <h1>Hello world</h1>;
 ```
 
-Default: `"react"`
+React: `"react-jsx"`<sup>[[1]](https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html)</sup>
 
 ```tsx twoslash
 declare module JSX {
@@ -31,7 +31,23 @@ declare module JSX {
 }
 // @showEmit
 // @noErrors
-export const helloWorld = () => <h1>Hello world</h1>;
+// @jsx: react-jsx
+export const HelloWorld = () => <h1>Hello world</h1>;
+```
+
+React dev transform: `"react-jsxdev"`<sup>[[1]](https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html)</sup>
+
+```tsx twoslash
+declare module JSX {
+  interface Element {}
+  interface IntrinsicElements {
+    [s: string]: any;
+  }
+}
+// @showEmit
+// @noErrors
+// @jsx: react-jsxdev
+export const HelloWorld = () => <h1>Hello world</h1>;
 ```
 
 Preserve: `"preserve"`
@@ -46,7 +62,7 @@ declare module JSX {
 // @showEmit
 // @noErrors
 // @jsx: preserve
-export const helloWorld = () => <h1>Hello world</h1>;
+export const HelloWorld = () => <h1>Hello world</h1>;
 ```
 
 React Native: `"react-native"`
@@ -61,10 +77,11 @@ declare module JSX {
 // @showEmit
 // @noErrors
 // @jsx: react-native
-export const helloWorld = () => <h1>Hello world</h1>;
+export const HelloWorld = () => <h1>Hello world</h1>;
 ```
 
-React 17 transform: `"react-jsx"`<sup>[[1]](https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html)</sup>
+
+Legacy React runtime: `"react"`
 
 ```tsx twoslash
 declare module JSX {
@@ -75,21 +92,21 @@ declare module JSX {
 }
 // @showEmit
 // @noErrors
-// @jsx: react-jsx
-export const helloWorld = () => <h1>Hello world</h1>;
+export const HelloWorld = () => <h1>Hello world</h1>;
 ```
 
-React 17 dev transform: `"react-jsxdev"`<sup>[[1]](https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html)</sup>
+This option can be used on a per-file basis too using an `@jsxRuntime` comment.
 
-```tsx twoslash
-declare module JSX {
-  interface Element {}
-  interface IntrinsicElements {
-    [s: string]: any;
-  }
-}
-// @showEmit
-// @noErrors
-// @jsx: react-jsxdev
-export const helloWorld = () => <h1>Hello world</h1>;
+Always use the classic runtime (`"react"`) for this file:
+
+```tsx
+/* @jsxRuntime classic */
+export const HelloWorld = () => <h1>Hello world</h1>;
+```
+
+Always use the automatic runtime (`"react-jsx"`) for this file:
+
+```tsx
+/* @jsxRuntime automatic */
+export const HelloWorld = () => <h1>Hello world</h1>;
 ```

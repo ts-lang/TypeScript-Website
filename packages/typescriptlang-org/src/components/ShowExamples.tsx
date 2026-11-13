@@ -37,7 +37,7 @@ const hrefForExample = (example: Example, lang: string) => {
   const params = example.compilerSettings || {}
   params.q = Math.floor(Math.random() * 512)
   const queryParams = Object.keys(params).map(key => key + '=' + params[key]).join('&');
-  const langPrefix = lang === "en" ? "" : lang
+  const langPrefix = lang === "en" ? "" : `/${lang}`
   return withPrefix(`${langPrefix}/play/?${prefix + queryParams}#${hash}`)
 }
 
@@ -108,18 +108,16 @@ export const RenderExamples = (props: Props) => {
   const sections = props.sections.map(sectionID => locale.sections.find(localeSection => sectionID === localeSection.id) || english.sections.find(localeSection => sectionID === localeSection.id))
   return (
     <div className="examples">
-      <ol role="tablist">
+      <div role="tablist">
         {sections.map(section => {
           const startOpen = section.id === props.defaultSection
           const selectedClass = startOpen ? " selected" : ""
           return (
-            <li key={section.name}>
-              <button role="tab" onClick={buttonOnClick(section.id.toLowerCase().replace(".", "-"))} className={"section-name button " + selectedClass} aria-selected={selectedClass.length ? "true" : "false"} >{section.name}</button>
-            </li>
+            <button key={section.name} role="tab" onClick={buttonOnClick(section.id.toLowerCase().replace(".", "-"))} className={"section-name button " + selectedClass} aria-selected={selectedClass.length ? "true" : "false"} >{section.name}</button>
           )
         }
         )}
-      </ol>
+      </div>
 
       {sections.map(section => {
         const sectionDict = sortedSectionsDictionary(locale, section)

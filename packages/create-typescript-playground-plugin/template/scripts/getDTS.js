@@ -22,7 +22,7 @@ const go = async () => {
   if (!existsSync(vendor)) mkdirSync(vendor)
   if (!existsSync(ds)) mkdirSync(ds)
 
-  const host = "https://www.staging-typescript.org"
+  const host = "https://www.typescriptlang.org"
 
   // For playground-dev purposes
   // const host = "http://localhost:8000";
@@ -35,7 +35,7 @@ const go = async () => {
     host + "/js/playground/ds/createDesignSystem.d.ts",
     join(ds, "createDesignSystem.d.ts"),
     text => {
-      const renameImport = text.replace("typescriptlang-org/static/js/sandbox", "../sandbox")
+      const renameImport = text.replace("@typescript/sandbox", "../sandbox")
       return renameImport
     }
   )

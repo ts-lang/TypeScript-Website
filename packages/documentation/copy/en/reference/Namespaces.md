@@ -9,7 +9,7 @@ translatable: true
 > **A note about terminology:**
 > It's important to note that in TypeScript 1.5, the nomenclature has changed.
 > "Internal modules" are now "namespaces".
-> "External modules" are now simply "modules", as to align with [ECMAScript 2015](http://www.ecma-international.org/ecma-262/6.0/)'s terminology, (namely that `module X {` is equivalent to the now-preferred `namespace X {`).
+> "External modules" are now simply "modules", as to align with [ECMAScript 2015](https://www.ecma-international.org/ecma-262/6.0/)'s terminology, (namely that `module X {` is equivalent to the now-preferred `namespace X {`).
 
 This post outlines the various ways to organize your code using namespaces (previously "internal modules") in TypeScript.
 As we alluded in our note about terminology, "internal modules" are now referred to as "namespaces".
@@ -125,7 +125,7 @@ Even though the files are separate, they can each contribute to the same namespa
 Because there are dependencies between files, we'll add reference tags to tell the compiler about the relationships between the files.
 Our test code is otherwise unchanged.
 
-##### Validation.ts
+### Validation.ts
 
 ```ts
 namespace Validation {
@@ -135,7 +135,7 @@ namespace Validation {
 }
 ```
 
-##### LettersOnlyValidator.ts
+### LettersOnlyValidator.ts
 
 ```ts
 /// <reference path="Validation.ts" />
@@ -149,7 +149,7 @@ namespace Validation {
 }
 ```
 
-##### ZipCodeValidator.ts
+### ZipCodeValidator.ts
 
 ```ts
 /// <reference path="Validation.ts" />
@@ -163,7 +163,7 @@ namespace Validation {
 }
 ```
 
-##### Test.ts
+### Test.ts
 
 ```ts
 /// <reference path="Validation.ts" />
@@ -193,7 +193,7 @@ for (let s of strings) {
 Once there are multiple files involved, we'll need to make sure all of the compiled code gets loaded.
 There are two ways of doing this.
 
-First, we can use concatenated output using the `--outFile` flag to compile all of the input files into a single JavaScript output file:
+First, we can use concatenated output using the [`outFile`](/tsconfig#outFile) option to compile all of the input files into a single JavaScript output file:
 
 ```Shell
 tsc --outFile sample.js Test.ts
@@ -208,7 +208,7 @@ tsc --outFile sample.js Validation.ts LettersOnlyValidator.ts ZipCodeValidator.t
 Alternatively, we can use per-file compilation (the default) to emit one JavaScript file for each input file.
 If multiple JS files get produced, we'll need to use `<script>` tags on our webpage to load each emitted file in the appropriate order, for example:
 
-##### MyTestPage.html (excerpt)
+### MyTestPage.html (excerpt)
 
 ```html
 <script src="Validation.js" type="text/javascript" />
@@ -256,7 +256,7 @@ Because this library is loaded through a `<script>` tag (instead of a module loa
 For the TypeScript compiler to see this shape, we use an ambient namespace declaration.
 For example, we could begin writing it as follows:
 
-##### D3.d.ts (simplified excerpt)
+### D3.d.ts (simplified excerpt)
 
 ```ts
 declare namespace D3 {

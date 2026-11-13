@@ -29,6 +29,8 @@
   --playground-pre-color: white;
   --table-border-color: #545454;
   --playground-pre-bg: #1e1e1e;
+  --blue-tinged-bg: #2c3841;
+  --blue-tinged-strong: #273f52;
   --footer-arrow-color: $ts-light-bg-grey-highlight-color;
   --fade-gradient: linear-gradient(
     0deg,
@@ -68,6 +70,8 @@ html.light-theme {
   --playground-pre-bg: #f7f7f7;
   --footer-arrow-color: $ts-dark-bg-for-foreground-color;
   --table-border-color: #f1f1f1;
+  --blue-tinged-bg: #e6f2fb;
+  --blue-tinged-strong: #cce4f6;
   --fade-gradient: linear-gradient(
     0deg,
     rgba(255, 255, 255, 1) 0%,
@@ -160,8 +164,7 @@ html.font-open-dyslexic {
   h2 > code,
   h3 > code {
     background-color: var(--inline-code-background-color);
-    font-size: 0.8em;
-    margin-top: 0.2em;
+    font-size: 0.95em;
     margin-left: 0.2em;
     margin-right: 0.2em;
     padding: 2px 4px;
@@ -214,4 +217,8 @@ html,
 #site-wrapper {
   display: flex;
   flex-direction: column;
+}
+
+.dark-theme {
+  color-scheme: dark;
 }

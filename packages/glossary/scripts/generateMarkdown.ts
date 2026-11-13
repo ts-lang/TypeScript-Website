@@ -3,7 +3,7 @@
 
 /** Run with:
      node --inspect-brk ./node_modules/.bin/ts-node --project packages/tsconfig-reference/tsconfig.json packages/tsconfig-reference/scripts/generateMarkdown.ts
-     yarn ts-node --project packages/tsconfig-reference/tsconfig.json packages/tsconfig-reference/scripts/generateMarkdown.ts 
+     pnpm ts-node --project packages/tsconfig-reference/tsconfig.json packages/tsconfig-reference/scripts/generateMarkdown.ts 
 */
 
 /**
@@ -32,7 +32,7 @@ languages.forEach((lang) => {
   const locale = join(__dirname, "..", "copy", lang);
   const fallbackLocale = join(__dirname, "..", "copy", "en");
 
-  const languageMeta = { terms: [] };
+  const languageMeta: { terms: { display: string; id: string }[] } = { terms: [] };
   const markdownChunks: string[] = [];
 
   const glossaryTerms = readdirSync(join(__dirname, "..", "copy", "en")).filter(

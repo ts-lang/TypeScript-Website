@@ -88,7 +88,7 @@ enum Direction {
 ```
 
 While string enums don't have auto-incrementing behavior, string enums have the benefit that they "serialize" well.
-In other words, if you were debugging and had to read the runtime value of a numeric enum, the value is often opaque - it doesn't convey any useful meaning on its own (though [reverse mapping](#reverse-mappings) can often help), string enums allow you to give a meaningful and readable value when your code runs, independent of the name of the enum member itself.
+In other words, if you were debugging and had to read the runtime value of a numeric enum, the value is often opaque - it doesn't convey any useful meaning on its own (though [reverse mapping](#reverse-mappings) can often help). String enums allow you to give a meaningful and readable value when your code runs, independent of the name of the enum member itself.
 
 ## Heterogeneous enums
 
@@ -167,11 +167,11 @@ enum FileAccess {
 There is a special subset of constant enum members that aren't calculated: literal enum members.
 A literal enum member is a constant enum member with no initialized value, or with values that are initialized to
 
-- any string literal (e.g. `"foo"`, `"bar`, `"baz"`)
+- any string literal (e.g. `"foo"`, `"bar"`, `"baz"`)
 - any numeric literal (e.g. `1`, `100`)
 - a unary minus applied to any numeric literal (e.g. `-1`, `-100`)
 
-When all members in an enum have literal enum values, some special semantics come to play.
+When all members in an enum have literal enum values, some special semantics come into play.
 
 The first is that enum members also become types as well!
 For example, we can say that certain members can _only_ have the value of an enum member:
@@ -220,7 +220,7 @@ function f(x: E) {
 
 In that example, we first checked whether `x` was _not_ `E.Foo`.
 If that check succeeds, then our `||` will short-circuit, and the body of the 'if' will run.
-However, if the check didn't succeed, then `x` can _only_ be `E.Foo`, so it doesn't make sense to see whether it's equal to `E.Bar`.
+However, if the check didn't succeed, then `x` can _only_ be `E.Foo`, so it doesn't make sense to see whether it's _not_ equal to `E.Bar`.
 
 ## Enums at runtime
 
@@ -365,6 +365,33 @@ let directions = [
 ];
 ```
 
+#### Const enum pitfalls
+
+Inlining enum values is straightforward at first, but comes with subtle implications.
+These pitfalls pertain to _ambient_ const enums only (basically const enums in `.d.ts` files) and sharing them between projects, but if you are publishing or consuming `.d.ts` files, these pitfalls likely apply to you, because `tsc --declaration` transforms `.ts` files into `.d.ts` files.
+
+1. For the reasons laid out in the [`isolatedModules` documentation](/tsconfig#references-to-const-enum-members), that mode is fundamentally incompatible with ambient const enums.
+   This means if you publish ambient const enums, downstream consumers will not be able to use [`isolatedModules`](/tsconfig#isolatedModules) and those enum values at the same time.
+2. You can easily inline values from version A of a dependency at compile time, and import version B at runtime.
+   Version A and B's enums can have different values, if you are not very careful, resulting in [surprising bugs](https://github.com/microsoft/TypeScript/issues/5219#issue-110947903), like taking the wrong branches of `if` statements.
+   These bugs are especially pernicious because it is common to run automated tests at roughly the same time as projects are built, with the same dependency versions, which misses these bugs completely.
+3. [`importsNotUsedAsValues: "preserve"`](/tsconfig#importsNotUsedAsValues) will not elide imports for const enums used as values, but ambient const enums do not guarantee that runtime `.js` files exist.
+   The unresolvable imports cause errors at runtime.
+   The usual way to unambiguously elide imports, [type-only imports](/docs/handbook/modules/reference.html#type-only-imports-and-exports), [does not allow const enum values](https://github.com/microsoft/TypeScript/issues/40344), currently.
+
+Here are two approaches to avoiding these pitfalls:
+
+1. Do not use const enums at all.
+   You can easily [ban const enums](https://typescript-eslint.io/linting/troubleshooting#how-can-i-ban-specific-language-feature) with the help of a linter.
+   Obviously this avoids any issues with const enums, but prevents your project from inlining its own enums.
+   Unlike inlining enums from other projects, inlining a project's own enums is not problematic and has performance implications.
+2. Do not publish ambient const enums, by deconstifying them with the help of [`preserveConstEnums`](/tsconfig#preserveConstEnums).
+   This is the approach taken internally by the [TypeScript project itself](https://github.com/microsoft/TypeScript/pull/5422).
+   [`preserveConstEnums`](/tsconfig#preserveConstEnums) emits the same JavaScript for const enums as plain enums.
+   You can then safely strip the `const` modifier from `.d.ts` files [in a build step](https://github.com/microsoft/TypeScript/blob/1a981d1df1810c868a66b3828497f049a944951c/Gulpfile.js#L144).
+
+   This way downstream consumers will not inline enums from your project, avoiding the pitfalls above, but a project can still inline its own enums, unlike banning const enums entirely.
+
 ## Ambient enums
 
 Ambient enums are used to describe the shape of already existing enum types.
@@ -378,7 +405,7 @@ declare enum Enum {
 ```
 
 One important difference between ambient and non-ambient enums is that, in regular enums, members that don't have an initializer will be considered constant if its preceding enum member is considered constant.
-In contrast, an ambient (and non-const) enum member that does not have initializer is _always_ considered computed.
+By contrast, an ambient (and non-const) enum member that does not have an initializer is _always_ considered computed.
 
 ## Objects vs Enums
 
@@ -408,7 +435,7 @@ ODirection.Up;
 // Using the enum as a parameter
 function walk(dir: EDirection) {}
 
-// It requires an extra line to pull out the keys
+// It requires an extra line to pull out the values
 type Direction = typeof ODirection[keyof typeof ODirection];
 function run(dir: Direction) {}
 

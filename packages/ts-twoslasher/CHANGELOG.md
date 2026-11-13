@@ -1,3 +1,116 @@
+# @typescript/twoslash
+
+## 3.2.14
+
+### Patch Changes
+
+- Updated dependencies [[`b1c247f`](https://github.com/microsoft/TypeScript-Website/commit/b1c247f2250efb6cdd5c08dc63883f9ce9852cd0)]:
+  - @typescript/vfs@1.6.6
+
+## 3.2.13
+
+### Patch Changes
+
+- Updated dependencies [[`292b11f`](https://github.com/microsoft/TypeScript-Website/commit/292b11fdd04f5fb5a9657efb423c8df9153b0a26)]:
+  - @typescript/vfs@1.6.5
+
+## 3.2.12
+
+### Patch Changes
+
+- [#3509](https://github.com/microsoft/TypeScript-Website/pull/3509) [`0daa298`](https://github.com/microsoft/TypeScript-Website/commit/0daa298f2f4526f8c66baff00b8df0290e37a4d4) Thanks [@jakebailey](https://github.com/jakebailey)! - Bump dependencies
+
+- Updated dependencies [[`0daa298`](https://github.com/microsoft/TypeScript-Website/commit/0daa298f2f4526f8c66baff00b8df0290e37a4d4)]:
+  - @typescript/vfs@1.6.4
+
+## 3.2.11
+
+### Patch Changes
+
+- Updated dependencies [[`5e2b828`](https://github.com/microsoft/TypeScript-Website/commit/5e2b8285e01edffd888aa97002d082f6975f7bc1)]:
+  - @typescript/vfs@1.6.3
+
+## 3.2.10
+
+### Patch Changes
+
+- Updated dependencies [[`1843cf4`](https://github.com/microsoft/TypeScript-Website/commit/1843cf45e06193b3dc072088785fe2bfad477de5)]:
+  - @typescript/vfs@1.6.2
+
+## 3.2.9
+
+### Patch Changes
+
+- Updated dependencies [[`4a30b02`](https://github.com/microsoft/TypeScript-Website/commit/4a30b022bc0c1df6b6abb71c99c104f3b19f2c91)]:
+  - @typescript/vfs@1.6.1
+
+## 3.2.8
+
+### Patch Changes
+
+- Updated dependencies [[`441338c`](https://github.com/microsoft/TypeScript-Website/commit/441338c04fbbef834ffa1ac6dc0dc8816e9137fc), [`725841a`](https://github.com/microsoft/TypeScript-Website/commit/725841adc9e5b734ccb0663fccb2ba05d0dcca62)]:
+  - @typescript/vfs@1.6.0
+
+## 3.2.7
+
+### Patch Changes
+
+- [#3000](https://github.com/microsoft/TypeScript-Website/pull/3000) [`71776ae`](https://github.com/microsoft/TypeScript-Website/commit/71776aecc1b56289ab56d240a9272ce83686ef1a) Thanks [@antfu](https://github.com/antfu)! - Handle `.d.cts` and `.d.mts` files
+
+- Updated dependencies [[`0ea84b5`](https://github.com/microsoft/TypeScript-Website/commit/0ea84b59ae291aba677fe77ca059c4112e45fb9b), [`0ea84b5`](https://github.com/microsoft/TypeScript-Website/commit/0ea84b59ae291aba677fe77ca059c4112e45fb9b), [`6168ef4`](https://github.com/microsoft/TypeScript-Website/commit/6168ef49a4d08c0b5658732d23625bbcc6049109), [`9f8dea2`](https://github.com/microsoft/TypeScript-Website/commit/9f8dea2c19a3b6028148090f5e8cba8eea086ec3), [`26f3e56`](https://github.com/microsoft/TypeScript-Website/commit/26f3e566aa8fff235a8f6927ef2c33b28be4fe89), [`71776ae`](https://github.com/microsoft/TypeScript-Website/commit/71776aecc1b56289ab56d240a9272ce83686ef1a)]:
+  - @typescript/vfs@1.5.3
+
+## 3.2.6
+
+### Patch Changes
+
+- Updated dependencies [642ea11]
+  - @typescript/vfs@1.5.2
+
+## 3.2.5
+
+### Patch Changes
+
+- 46eba14: Initial bump for changesets
+- Updated dependencies [46eba14]
+  - @typescript/vfs@1.5.1
+
+## 3.1.0
+
+Adds support for `// ---cut-after---`, e.g.
+
+````
+```ts twoslash
+const Page = () => (
+// ---cut---
+<Container>
+  <ImportantComponent />
+</Container>
+// ---cut-after---
+)
+```
+````
+
+## 3.0.0
+
+Changes the format of the `highlights` response from twoslash. It's very likely that no-one is using this, because none of the shiki infra is - but it's better to get this correct.
+
+## 2.2.0
+
+- Adds a new parameter to the twoslash config: `customTags`. This can be used to tell twoslash that you want to handle a specific `@tag` in the code sample. It comes out in the `tags` in `TwoSlashReturn`.
+
+Prior to this change, any `// @something` which wasn't already in `ExampleOptions` would be passed to the TS compiler (maybe causing an exception if it's not a compiler option.) Now you can tell twoslash "I want to do something with this tag, let it through"
+
+The use-case I'm thinking of is that shiki-twoslash may want to have it's own commands which sit on-top of twoslash, but I want to make sure that the internals of twoslash are all aligned correctly (think `--cut--` and the complex multi-file LSP logic) under the hood.
+
+## 2.1.0
+
+All "expected" errors from Twoslash are of the type `TwoslashError` which extends `Error`. This means you can catch the error and check its type, if it's a Twoslash error then it's something you can treat differently. In this case, that's being able to present a UI for those errors in shiki-twoslash as opposed to a critical process-ending exception.
+
+## 2.0.0
+
+- Removes HTML encoding from the Twoslash error rendered results. It's really not the responsibility of Twoslash to do that. I'm classing this as a major semver as folks could be relying on this behavior (all the shiki-twoslash stuff does for example.)
+
 ## 1.1.1
 
 - Better handling of JSON files
@@ -71,7 +184,7 @@ const b = "345"
 ```
 
 Now returns correct query responses, I needed this for the bug workbench.
-http://www.staging-typescript.org/dev/bug-workbench
+http://www.typescriptlang.org/dev/bug-workbench
 
 Also has a way to set the defaults for the config
 

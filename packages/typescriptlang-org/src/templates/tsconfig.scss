@@ -1,11 +1,16 @@
 @import "../style/globals.scss";
 
+.tsconfig-page-title {
+  margin-bottom: 1.5rem;
+}
+
 .tsconfig {
+  margin-bottom: 6rem;
   // Drastically reduce the padding and margins to make it fit phones
   &.raised {
     @media (max-width: $screen-xs) {
       margin: 0;
-      padding: 0.5rem;
+      padding: 2rem;
 
       #full-option-list {
         padding: 10px;
@@ -17,12 +22,94 @@
     }
   }
 
+  // The quick jump section
+
+  &.button {
+    margin-bottom: 2rem;
+    > a {
+      display: block;
+    }
+    svg {
+      margin-top: 0.8rem;
+      margin-right: 0.3rem;
+      path {
+        stroke: var(--text-color);
+      }
+    }
+  }
+  &.button.closed {
+    svg {
+      transform: rotate(270deg);
+    }
+  }
+  &.button.open {
+    a {
+      text-decoration: none;
+      color: var(--text-color);
+    }
+  }
+
+  .tsconfig-quick-nav {
+    a {
+      text-decoration: underline;
+    }
+
+    &.grouped {
+      border-left: 1px solid var(--text-color);
+      margin-bottom: 3rem;
+    }
+    margin-left: -1rem;
+    padding-left: 1rem;
+
+    h3 {
+      font-weight: normal;
+      margin-bottom: 0.1rem;
+      a {
+        color: var(--text-color);
+      }
+    }
+    .tsconfig-quick-nav-category {
+      display: flex;
+      align-items: flex-start;
+
+      @media (max-width: $screen-md) {
+        flex-direction: column;
+      }
+      h3, h4 {
+        width: 160px;
+        flex: 0 0 auto;
+      }
+      ol {
+        box-sizing: border-box;
+        max-width: 100%;
+        flex: 1 1 auto;
+      }
+      li {
+        list-style: none;
+        display: inline-block;
+        margin-left: 8px;
+        max-width: calc(100% - 8px);
+        overflow-wrap: anywhere;
+        a {
+          color: var(--text-color);
+          text-decoration: underline;
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+        span {
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+
   article {
     width: 100%;
   }
 
   // Handles hash links with a sticky header
-  a[name]::before {
+  a[id]::before {
     display: block;
     content: "";
     margin-top: -80px;
@@ -47,7 +134,8 @@
       @media (max-width: $screen-xs) {
         width: 46%;
         h5 {
-          overflow-x: hidden;
+          overflow-wrap: break-word;
+          word-break: break-word;
         }
       }
 
@@ -83,6 +171,8 @@
 
     ul {
       display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       margin: 0;
     }
 
@@ -114,7 +204,7 @@
 
     li {
       display: block;
-      margin: 8px;
+      margin: 6px;
     }
   }
 
@@ -138,8 +228,13 @@
 
     > h3 {
       margin-bottom: 0;
-      overflow-x: hidden;
+      word-break: break-word;
+      overflow-wrap: break-word;
       offset-anchor: -30px;
+
+      @media (max-width: $screen-sm) {
+        display: block;
+      }
 
       > a {
         scroll-margin-top: 65px;
@@ -161,6 +256,10 @@
         border-right: 1px solid gray;
         padding-right: 20px;
         word-wrap: break-word;
+
+        pre .error > span {
+          min-width: 0;
+        }
 
         @media (max-width: $screen-xs) {
           border-right: none;
@@ -184,6 +283,15 @@
         li {
           list-style: none;
           margin-bottom: 12px;
+
+          ul {
+            padding: 0;
+            margin-bottom: 18px;
+          }
+          li {
+            margin: 0;
+            margin-bottom: 12px;
+          }
         }
         tr {
           padding: 10px 0;

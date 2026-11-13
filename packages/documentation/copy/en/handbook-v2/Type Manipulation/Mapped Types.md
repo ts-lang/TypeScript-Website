@@ -7,7 +7,7 @@ oneline: "Generating types by re-using an existing type."
 
 When you don't want to repeat yourself, sometimes a type needs to be based on another type.
 
-Mapped types build on the syntax for index signatures, which are used to declare the types of properties which has not been declared ahead of time:
+Mapped types build on the syntax for index signatures, which are used to declare the types of properties which have not been declared ahead of time:
 
 ```ts twoslash
 type Horse = {};
@@ -22,7 +22,7 @@ const conforms: OnlyBoolsAndHorses = {
 };
 ```
 
-A mapped type is a generic type which uses a union created [via a `keyof`](/docs/handbook/2/indexed-access-types.html) to iterate through the keys of one type to create another:
+A mapped type is a generic type which uses a union of `PropertyKey`s (frequently created [via a `keyof`](/docs/handbook/2/indexed-access-types.html)) to iterate through keys to create a type:
 
 ```ts twoslash
 type OptionsFlags<Type> = {
@@ -30,23 +30,23 @@ type OptionsFlags<Type> = {
 };
 ```
 
-In this example, `OptionFlags` will take all the properties from the type `Type` and change their values to be a boolean.
+In this example, `OptionsFlags` will take all the properties from the type `Type` and change their values to be a boolean.
 
 ```ts twoslash
 type OptionsFlags<Type> = {
   [Property in keyof Type]: boolean;
 };
 // ---cut---
-type FeatureFlags = {
+type Features = {
   darkMode: () => void;
   newUserProfile: () => void;
 };
 
-type FeatureOptions = OptionsFlags<FeatureFlags>;
+type FeatureOptions = OptionsFlags<Features>;
 //   ^?
 ```
 
-### Mapping Modifiers
+## Mapping Modifiers
 
 There are two additional modifiers which can be applied during mapping: `readonly` and `?` which affect mutability and optionality respectively.
 
@@ -124,6 +124,20 @@ interface Circle {
 }
 
 type KindlessCircle = RemoveKindField<Circle>;
+//   ^?
+```
+
+You can map over arbitrary unions, not just unions of `string | number | symbol`, but unions of any type:
+
+```ts twoslash
+type EventConfig<Events extends { kind: string }> = {
+    [E in Events as E["kind"]]: (event: E) => void;
+}
+
+type SquareEvent = { kind: "square", x: number, y: number };
+type CircleEvent = { kind: "circle", radius: number };
+
+type Config = EventConfig<SquareEvent | CircleEvent>
 //   ^?
 ```
 

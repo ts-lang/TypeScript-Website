@@ -1,14 +1,15 @@
+// node ./node_modules/.bin/ts-node packages/tsconfig-reference/scripts/schema/downloadSchemaBase.ts
+
 // https://json.schemastore.org/tsconfig.json
 
-const nodeFetch = require("node-fetch").default;
-const { writeFileSync, existsSync, mkdirSync } = require("fs");
-const { join } = require("path");
+import { writeFileSync, existsSync, mkdirSync } from "fs";
+import { join } from "path";
 
-const getFileAndStoreLocally = async (url, path, editFunc) => {
-  const editingFunc = editFunc ? editFunc : (text) => text;
-  const packageJSON = await nodeFetch(url);
+const getFileAndStoreLocally = async (url: string, path: string, editFunc?: (text: string) => string) => {
+  const editingFunc = editFunc ? editFunc : (text: string) => text;
+  const packageJSON = await fetch(url);
   const contents = await packageJSON.text();
-  writeFileSync(join(__dirname, path), editingFunc(contents), "utf8");
+  writeFileSync(new URL(path, import.meta.url), editingFunc(contents), "utf8");
 };
 
 getFileAndStoreLocally(

@@ -3,15 +3,17 @@
 
 /** Run with:
      node --inspect-brk ./node_modules/.bin/ts-node packages/tsconfig-reference/scripts/tsconfig/generateJSON.ts
-     yarn ts-node packages/tsconfig-reference/scripts/tsconfig/generateJSON.ts
+     pnpm ts-node packages/tsconfig-reference/scripts/tsconfig/generateJSON.ts
 */
 
-import * as ts from "typescript";
+console.log("TSConfig Ref: JSON for TSConfig");
+
+import ts from "typescript-for-docs";
 
 import { CommandLineOptionBase } from "../types";
 import { writeFileSync } from "fs";
 import { join } from "path";
-import { format } from "prettier";
+import prettier from "prettier";
 import {
   denyList,
   relatedTo,
@@ -22,14 +24,21 @@ import {
   allowedValues,
   configToRelease,
   additionalOptionDescriptors,
-} from "../tsconfigRules";
+} from "../tsconfigRules.js";
 import { CompilerOptionName } from "../../data/_types";
 
-const toJSONString = (obj) => format(JSON.stringify(obj, null, "  "), { filepath: "thing.json" });
-const writeJSON = (name, obj) =>
-  writeFileSync(join(__dirname, "..", "..", "data", name), toJSONString(obj));
-const writeString = (name, text) =>
-  writeFileSync(join(__dirname, "..", "..", "data", name), format(text, { filepath: name }));
+const toJSONString = (obj: any) =>
+  prettier.format(JSON.stringify(obj, null, "  "), { filepath: "thing.json" });
+const writeJSON = (name: string, obj: any) =>
+  writeFileSync(
+    new URL(`../../data/${name}`, import.meta.url),
+    toJSONString(obj)
+  );
+const writeString = (name: string, text: string) =>
+  writeFileSync(
+    new URL(`../../data/${name}`, import.meta.url),
+    prettier.format(text, { filepath: name })
+  );
 
 export interface CompilerOptionJSON extends CommandLineOptionBase {
   releaseVersion?: string;
@@ -43,14 +52,29 @@ export interface CompilerOptionJSON extends CommandLineOptionBase {
   hostObj: string;
 }
 
-// @ts-ignore because this is private
-const options = ts.optionDeclarations as CompilerOptionJSON[];
+// These are all
+const options = [
+  // @ts-ignore
+  ...ts.optionDeclarations,
+  // @ts-ignore
+  ...ts.optionsForWatch,
+  // @ts-ignore
+  ...ts.buildOpts,
+  // @ts-ignore
+  ...ts.typeAcquisitionDeclarations,
+].filter((item, pos, arr) => arr.indexOf(item) == pos) as CompilerOptionJSON[];
+
 const categories = new Set<ts.DiagnosticMessage>();
 
 // Cut down the list
 const filteredOptions = options
   .filter((o) => !denyList.includes(o.name as CompilerOptionName))
   .filter((o) => !o.isCommandLineOnly);
+
+// The import from TS isn't 'clean'
+const buildOpts = ["build", "verbose", "dry", "clean", "force"];
+// @ts-ignore
+const watchOpts = [...ts.optionsForWatch.map((opt) => opt.name), "watch"];
 
 // We don't get structured data for all compiler flags (especially ones which aren't in 'compilerOptions')
 // so, create these manually.
@@ -101,17 +125,6 @@ const topLevelTSConfigOptions: CompilerOptionJSON[] = [
     hostObj: "top_level",
   },
   {
-    name: "typeAcquisition",
-    type: "string",
-    categoryCode: 0,
-    // @ts-ignore
-    description: {
-      message: "Print names of files part of the compilation.",
-    },
-    defaultValue: "false",
-    hostObj: "top_level",
-  },
-  {
     name: "references",
     type: "string",
     categoryCode: 0,
@@ -124,46 +137,7 @@ const topLevelTSConfigOptions: CompilerOptionJSON[] = [
   },
 ];
 
-// TODO: https://github.com/microsoft/TypeScript/pull/39243#issuecomment-816756824
-// Make automatic!
-const watchOptions: CompilerOptionJSON[] = [
-  {
-    name: "watchFile",
-    type: "string",
-    categoryCode: 999,
-    // @ts-ignore
-    description: {
-      message: "The strategy for how individual files are watched.",
-    },
-    defaultValue: "useFsEvents",
-    hostObj: "watchOptions",
-  },
-  {
-    name: "watchDirectory",
-    type: "list",
-    categoryCode: 999,
-    // @ts-ignore
-    description: {
-      message:
-        "The strategy for how entire directory trees are watched under systems that lack recursive file-watching functionality.",
-    },
-    defaultValue: "useFsEvents",
-    hostObj: "watchOptions",
-  },
-  {
-    name: "fallbackPolling",
-    type: "list",
-    categoryCode: 999,
-    // @ts-ignore
-    description: {
-      message:
-        "The polling strategy that gets used when the system runs out of native file watchers.",
-    },
-    hostObj: "watchOptions",
-  },
-];
-
-const allOptions = [...topLevelTSConfigOptions, ...filteredOptions, ...watchOptions].sort((l, r) =>
+const allOptions = [...topLevelTSConfigOptions, ...filteredOptions].sort((l, r) =>
   l.name.localeCompare(r.name)
 );
 
@@ -173,7 +147,7 @@ allOptions.forEach((option) => {
   // Convert JS Map types to a JSONable obj
   if ("type" in option && typeof option.type === "object" && "get" in option.type) {
     // Option definitely has a map obj, need to resolve it
-    const newOptions = {};
+    const newOptions: Record<string, any> = {};
     option.type.forEach((v, k) => (newOptions[k] = v));
     // @ts-ignore
     option.type = newOptions;
@@ -181,8 +155,8 @@ allOptions.forEach((option) => {
 
   // Convert categories to be something which can be looked up
   if ("category" in option) {
-    categories.add(option.category);
-    option.categoryCode = option.category.code;
+    categories.add(option.category!);
+    option.categoryCode = option.category!.code;
     option.category = undefined;
   } else if (option.name in additionalOptionDescriptors) {
     // Set category code manually because some options have no category
@@ -208,27 +182,28 @@ allOptions.forEach((option) => {
   }
 
   if (name in allowedValues) {
-    option.allowedValues = allowedValues[name];
+    option.allowedValues = (allowedValues as any)[name];
   }
 
   if (name in configToRelease) {
-    option.releaseVersion = configToRelease[name];
+    option.releaseVersion = (configToRelease as any)[name];
   }
 
   if (name in defaultsForOptions) {
-    option.defaultValue = defaultsForOptions[name];
+    const defaultValue = (defaultsForOptions as any)[name];
+    option.defaultValue = Array.isArray(defaultValue) ? defaultValue.join(" ") : defaultValue;
   }
 
-  option.hostObj = "compilerOptions";
+  if (buildOpts.includes(name)) option.hostObj = "build";
+  else if (watchOpts.includes(name)) option.hostObj = "watchOptions";
+  else option.hostObj = "compilerOptions";
 
   // Remove irrelevant properties
   delete option.shortName;
   delete option.showInSimplifiedHelpView;
 });
 
-writeJSON("tsconfigOpts.json", {
-  options: allOptions,
-});
+writeJSON("tsconfigOpts.json", allOptions);
 
 // Improve the typing for the rules
 writeString(
@@ -238,7 +213,7 @@ writeString(
     .join("' | '")}'`
 );
 
-const categoryMap = {};
+const categoryMap: Record<string, any> = {};
 categories.forEach((c) => (categoryMap[c.code] = c));
 
 // Add custom categories, for custom compiler flags

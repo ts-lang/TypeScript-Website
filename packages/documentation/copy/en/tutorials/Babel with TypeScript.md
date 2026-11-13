@@ -10,7 +10,7 @@ translatable: true
 
 When making a modern JavaScript project, you might ask yourself what is the right way to convert files from TypeScript to JavaScript?
 
-A lot of the time the answer is _"it depends"_, or _"someone may have decided for you"_ depending on the project. If you are building your project with an existing framework like [tsdx](https://tsdx.io), [Angular](https://angular.io/), [NestJS](https://nestjs.com/) or any framework mentioned in the [Getting Started](/docs/home) then this decision is handled for you.
+A lot of the time the answer is _"it depends"_, or _"someone may have decided for you"_ depending on the project. If you are building your project with an existing framework like [tsdx](https://tsdx.io), [Angular](https://angular.io/), [NestJS](https://nestjs.com/) or any framework mentioned in the [Getting Started](/docs) then this decision is handled for you.
 
 However, a useful heuristic could be:
 
@@ -25,7 +25,7 @@ This technique is a hybrid approach, using Babel's [preset-typescript](https://b
 
 By using babel's support for TypeScript, you get the ability to work with existing build pipelines and are more likely to have a faster JS emit time because Babel does not type check your code.
 
-#### Type Checking and d.ts file generation
+### Type Checking and d.ts file generation
 
 The downside to using babel is that you don't get type checking during the transition from TS to JS. This can mean that type errors which you miss in your editor could sneak through into production code.
 

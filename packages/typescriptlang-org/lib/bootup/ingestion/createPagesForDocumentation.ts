@@ -2,12 +2,12 @@ const path = require(`path`)
 const fs = require(`fs`)
 const { green } = require("chalk")
 import { NodePluginArgs, CreatePagesArgs } from "gatsby"
+import { getDocumentationNavForLanguage } from "../../../src/lib/documentationNavigation"
 import {
-  getDocumentationNavForLanguage,
   getNextPageID,
   getPreviousPageID,
   SidebarNavItem,
-} from "../../../src/lib/documentationNavigation"
+} from "../../../src/lib/documentationNavigationUtils"
 import { addPathToSite } from "../pathsOnSiteTracker"
 import { isMultiLingual } from "./languageFilter"
 
@@ -23,6 +23,7 @@ export const createDocumentationPages = async (
         filter: {
           sourceInstanceName: { eq: "documentation" }
           extension: { eq: "md" }
+          relativeDirectory: { ne: "en/modules-reference/diagrams" }
         }
       ) {
         nodes {
@@ -82,8 +83,8 @@ export const createDocumentationPages = async (
     }
     const id = findWithPage(fakeTopRoot, permalink)
 
-    let previousID = undefined
-    let nextID = undefined
+    let previousID = null
+    let nextID = null
     if (id) {
       const previousPath = getPreviousPageID(handbookNav, id)
       if (previousPath) {

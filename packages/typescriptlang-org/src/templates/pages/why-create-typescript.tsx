@@ -64,7 +64,7 @@ class Main {
 `.trim()}</code></pre>
 
                                 <p>These two code samples do the same thing, however the Java version comes with a lot of words that aren't necessarily about
-telling the computer exactly what to do, e.g. <code>class Main &#123;</code>, <code>public static void main(String[] args) &#123;</code>, and two extra <code>&rbrace;</code>s.
+telling the computer exactly what to do, e.g. <code>class Main &#123;</code>, <code>public static void main(String[] args) &#123;</code>, and two extra <code>&#125;</code>s.
           It also has semi-colons at the end of some lines. Neither of these programming languages are wrong, Java however, is aimed at building different things from JavaScript, and these extra bits of code make sense within the constraints of building a Java app.</p>
 
                                 <p>To get to the key point though, there is one standout line I'd like us to compare:</p>
@@ -161,7 +161,7 @@ understand how every change affects the rest of the program.</p>
 
                                 <p>Typically, the need to ensure there are no bugs in your code can be handled by writing automated tests, then by manually verifying that the code works as you expect and finally having another person validate that it seems correct.</p>
 
-                                <p>Not many companies are the size of Microsoft, however a lot of all problems writing JavaScript in large codebases are the same. Many JavaScript apps build apps which are made up of hundreds of thousands of files. A single change
+                                <p>Not many companies are the size of Microsoft, however a lot of all problems writing JavaScript in large codebases are the same. Many JavaScript apps are made up of hundreds of thousands of files. A single change
                                 to one individual file can affect the behaviour of any number of other files, like throwing a pebble into a pond
 and causing ripples to spread out to the bank.</p>
 

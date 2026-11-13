@@ -1,25 +1,16 @@
 import React, { useEffect, useState } from "react"
-import { Intl } from "../../components/Intl"
 
-import { indexCopy } from "../../copy/en/index"
+import { indexCopy } from "../../copy/en/index2"
 import { createInternational } from "../../lib/createInternational"
 import { useIntl } from "react-intl"
-import { isTouchDevice } from "../../lib/isTouchDevice"
 import { EditorExamples } from "./EditorExamples"
 
 const Row = (props: { children: any, className?: string }) => <div className={[props.className, "row"].join(" ")}>{props.children}</div>
 const Col = (props: { children: any, className?: string }) => <div className={[props.className, "col1"].join(" ")}>{props.children}</div>
 const Col2 = (props: { children: any }) => <div className="col2">{props.children}</div>
 
-const event = (name: string, options?: any) => {
-  // @ts-ignore
-  window.appInsights &&
-    // @ts-ignore
-    window.appInsights.trackEvent({ name }, options)
-}
-
-const FluidButton = (props: { href?: string, onClick?: any, title: string, subtitle?: string, icon: JSX.Element, className?: string }) => (
-  <a className={"fluid-button " + props.className || ""} href={props.href} onClick={props.onClick}>
+const FluidButton = (props: { href?: string, onClick?: any, title: string, subtitle?: string, icon: JSX.Element, className?: string, role?: string }) => (
+  <a className={"fluid-button " + props.className || ""} href={props.href} onClick={props.onClick} role={props.role}>
     <div>
       <div className="fluid-button-title">{props.title}</div>
       <div className="fluid-button-subtitle">{props.subtitle}</div>
@@ -38,22 +29,21 @@ export const AboveTheFold = () => {
     const onclick = (e) => {
       setShowCTALinks(true)
       e.preventDefault()
-      event("Home Page CTA Started")
       return false
     }
 
     return (<Row>
       <Col>
-        <h1>{i("index_headline", { bold: (...chunk) => <strong>{chunk}</strong> })}</h1>
-        <p>{i("index_summary")}</p>
-        <p>{i("index_locations")}</p>
+        <h1>{i("index_2_headline", { bold: (...chunk) => <strong>{chunk}</strong> })}</h1>
+        <p>{i("index_2_summary")}</p>
 
         <div className="call-to-action" style={{ justifyContent: "left" }}>
           <FluidButton
-            title={i("index_cta_install")}
-            subtitle={i("index_cta_install_subtitle")}
+            title={i("index_2_cta_install")}
+            subtitle={i("index_2_cta_install_subtitle")}
             href="/download"
             onClick={onclick}
+            role="button"
             icon={
               <svg width="21" height="5" viewBox="0 0 21 5" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="0.5" y="0.5" width="4" height="4" stroke="black" />
@@ -63,9 +53,9 @@ export const AboveTheFold = () => {
             } />
         </div>
       </Col>
-      <Col2>
+      <Col>
         <EditorExamples />
-      </Col2>
+      </Col>
     </Row>)
   }
 
@@ -74,12 +64,11 @@ export const AboveTheFold = () => {
       <h2>Get Started With TypeScript</h2>
       <Row>
         <Col className="call-to-action">
-          <img src={require("../../assets/index/play-dark.png").default} width="100%" height="400px" />
+          <img src={require("../../assets/index/play-light.png").default} width="100%" role="none"  />
           <FluidButton
-            title={i("index_cta_play")}
-            subtitle={i("index_cta_play_subtitle")}
+            title={i("index_2_cta_play")}
+            subtitle={i("index_2_cta_play_subtitle")}
             href="/play"
-            onClick={() => event("Home Page CTA Exited", { link: "playground" })}
             icon={
               <svg width="33" height="33" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <g clipPath="url(#clip0)">
@@ -97,13 +86,12 @@ export const AboveTheFold = () => {
             } />
         </Col>
 
-        <Col className="call-to-action hide-small">
-          <img src={require("../../assets/index/code-dark.png").default} width="100%" height="400px" />
+        <Col className="call-to-action">
+          <img src={require("../../assets/index/code-light.png").default} width="100%" role="none"  />
           <FluidButton
-            title={i("index_cta_download")}
-            subtitle={i("index_cta_download_subtitle")}
+            title={i("index_2_cta_download")}
+            subtitle={i("index_2_cta_download_subtitle")}
             href="/download"
-            onClick={() => event("Home Page CTA Exited", { link: "download" })}
             icon={
               <svg width="15" height="27" viewBox="0 0 15 27" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M7.5 0.5V19M7.5 19L1 13M7.5 19L13 13" stroke="black" strokeWidth="1.5" />
@@ -125,8 +113,6 @@ export const AboveTheFold = () => {
           </div>
           <div className="inline-buttons">
             <a className='flat-button' href="/docs/handbook/intro.html">Web</a>
-            <a className='flat-button' href="/assets/typescript-handbook.epub">Epub</a>
-            <a className='flat-button' href="/assets/typescript-handbook.pdf">PDF</a>
           </div>
         </Col>
       </Row>
@@ -137,10 +123,11 @@ export const AboveTheFold = () => {
     const Content = window.innerWidth < 600 ? CTAHeadlineMobile : CTAHeadlines
     return (
       <div className="cta">
-        <div className="transparent-button" onClick={() => setShowCTALinks(false)}><svg width="21" height="14" viewBox="0 0 21 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20.25 7.75L1.75 7.75M1.75 7.75L7.75 1.25M1.75 7.75L7.75 13.25" stroke="white" stroke-width="2" />
-        </svg>
-          Back</div>
+        <a className="transparent-button" onClick={() => setShowCTALinks(false)} href="#" role="button">
+          <svg width="21" height="14" viewBox="0 0 21 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20.25 7.75L1.75 7.75M1.75 7.75L7.75 1.25M1.75 7.75L7.75 13.25" stroke="white" strokeWidth="2" />
+          </svg>
+          Back</a>
         <Content />
       </div>
     )

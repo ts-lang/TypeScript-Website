@@ -1,12 +1,12 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useRef } from "react"
 import ReactDOM from "react-dom"
 import { Layout } from "../components/layout"
-import { withPrefix, graphql } from "gatsby"
+import { withPrefix } from "gatsby"
 
 import "./play.scss"
 import { RenderExamples } from "../components/ShowExamples"
 
-import { useIntl } from "react-intl";
+import { useIntl } from "react-intl"
 import { createInternational } from "../lib/createInternational"
 import { hasLocalStorage } from "../lib/hasLocalStorage"
 import { headCopy } from "../copy/en/head-seo"
@@ -16,22 +16,49 @@ import { Intl } from "../components/Intl"
 import "reflect-metadata"
 
 import playgroundReleases from "../../../sandbox/src/releases.json"
+import { getPlaygroundUrls } from "../lib/playgroundURLs"
+import { createPlaygroundV2Query } from "../lib/createPlaygroundV2Query"
+
+import type * as playgroundPackage from "../../static/js/playground";
 
 // This gets set by the playground
-declare const playground: ReturnType<typeof import("@typescript/playground").setupPlayground>
+declare const playground: playgroundPackage.Playground;
 
 type Props = {
   pageContext: {
     lang: string
     examplesTOC: typeof import("../../static/js/examples/en.json")
     optionsSummary: any // this is just passed through to the playground JS library at this point
+    playgroundHandbookTOC: { docs: any[] }
   }
 }
 
 const Play: React.FC<Props> = (props) => {
   const i = createInternational<typeof headCopy & typeof playCopy>(useIntl())
+  const sandboxRef = useRef<import("@typescript/sandbox").Sandbox>()
+
+  const updateNewPlaygroundLink = (event: React.SyntheticEvent<HTMLAnchorElement>) => {
+    const sandbox = sandboxRef.current
+    const query = sandbox
+      ? createPlaygroundV2Query(sandbox, location.search)
+      : location.search + location.hash
+    event.currentTarget.href = withPrefix("/play/v2/") + query
+  }
 
   useEffect(() => {
+    const redirectProject = () => {
+      if (!location.hash.startsWith("#code/v2/")) return false
+      location.replace(withPrefix("/play/v2/") + location.search + location.hash)
+      return true
+    }
+    if (redirectProject()) return
+
+    const controller = navigator.serviceWorker?.controller
+    if (controller && new URL(controller.scriptURL).pathname === withPrefix("/play/coi-serviceworker.min.js")) {
+      controller.postMessage({ type: "deregister" })
+      return
+    }
+
     if (!document.getElementById("monaco-editor-embed")) return
     if (document.getElementById("monaco-editor-embed")!.childElementCount > 0) {
       return console.log("Playground already loaded")
@@ -41,7 +68,7 @@ const Play: React.FC<Props> = (props) => {
     // a page reload to ensure the playground is full set up
     let leftPlayground = false
     window.addEventListener('popstate', (event) => {
-      const onPlayground = document.location.pathname.endsWith("/play/") || document.location.pathname.endsWith("/play")
+      const onPlayground = /\/play\/?$/.test(document.location.pathname)
       if (leftPlayground && onPlayground) {
         document.location.reload()
       } else if (!leftPlayground && !onPlayground) {
@@ -54,6 +81,8 @@ const Play: React.FC<Props> = (props) => {
       return
     }
 
+    // @ts-ignore - so the playground handbook can grab this data
+    window.playgroundHandbookTOC = props.pageContext.playgroundHandbookTOC
     // @ts-ignore - so the config options can use localized descriptions
     window.optionsSummary = props.pageContext.optionsSummary
     // @ts-ignore - for React-based plugins
@@ -62,6 +91,8 @@ const Play: React.FC<Props> = (props) => {
     window.reactDOM = ReactDOM
     // @ts-ignore - so that plugins etc can use i18n
     window.i = i
+    // @ts-ignore - same as window.i but hopefully not overwritten by App Insights
+    window.__tsLocalize = i
 
     const getLoaderScript = document.createElement('script');
     getLoaderScript.src = withPrefix("/js/vs.loader.js");
@@ -71,9 +102,9 @@ const Play: React.FC<Props> = (props) => {
 
       let tsVersionParam = params.get("ts")
       // handle the nightly lookup 
-      if (tsVersionParam && tsVersionParam === "Nightly" || tsVersionParam === "next") {
-        // Avoids the CDN to doubly skip caching
-        const nightlyLookup = await fetch("https://tswebinfra.blob.core.windows.net/indexes/next.json", { cache: "no-cache" })
+      if (tsVersionParam === "Nightly" || tsVersionParam === "next") {
+        // The CDN is configured to have a short TTL on the indexes directory.
+        const nightlyLookup = await fetch("https://playgroundcdn.typescriptlang.org/indexes/next.json", { cache: "no-cache" })
         const nightlyJSON = await nightlyLookup.json()
         tsVersionParam = nightlyJSON.version
       }
@@ -83,13 +114,15 @@ const Play: React.FC<Props> = (props) => {
         tsVersionParam = tsVersionParam.replace("-insiders.", "-dev.")
       }
 
-      const latestRelease = [...playgroundReleases.versions].sort().pop()
+      const latestRelease = [...playgroundReleases.versions].sort().pop()!
       const tsVersion = tsVersionParam || latestRelease
 
       // Because we can reach to localhost ports from the site, it's possible for the locally built compiler to 
       // be hosted and to power the editor with a bit of elbow grease.
       const useLocalCompiler = tsVersion === "dev"
-      const urlForMonaco = useLocalCompiler ? "http://localhost:5615/dev/vs" : `https://typescript.azureedge.net/cdn/${tsVersion}/monaco/min/vs`
+      const devIsh = ["pr", "dev"]
+      const version = devIsh.find(d => tsVersion.includes(d)) ? "dev" : "min"
+      const urlForMonaco = useLocalCompiler ? "http://localhost:5615/dev/vs" : `https://playgroundcdn.typescriptlang.org/cdn/${tsVersion}/monaco/${version}/vs`
 
       // Make a quick HEAD call for the main monaco editor for this version of TS, if it
       // bails then give a useful error message and bail.
@@ -101,19 +134,45 @@ const Play: React.FC<Props> = (props) => {
           div.style.webkitAnimation = ""
         })
 
-        document.getElementById("loading-message")!.innerHTML = `This version of TypeScript <em>(${tsVersion?.replace("<", "-")})</em><br/>has not been prepared for the Playground<br/><br/>Try <a href='/play?ts=${latestRelease}${document.location.hash}'>${latestRelease}</a> or <a href="/play?ts=next${document.location.hash}">Nightly</a>`
+        const loadingMessage = document.getElementById("loading-message")!
+        loadingMessage.textContent = ""
+
+        const em = document.createElement("em")
+        em.textContent = `(${tsVersion})`
+
+        const latestReleaseLink = document.createElement('a');
+        latestReleaseLink.href = `${document.location.pathname}?ts=${latestRelease}${document.location.hash}`;
+        latestReleaseLink.textContent = latestRelease;
+
+        const nightlyLink = document.createElement('a');
+        nightlyLink.href = `${document.location.pathname}?ts=next${document.location.hash}`;
+        nightlyLink.textContent = 'Nightly';
+
+        loadingMessage.appendChild(document.createTextNode("This version of TypeScript "))
+        loadingMessage.appendChild(em)
+        loadingMessage.appendChild(document.createElement("br"))
+        loadingMessage.appendChild(document.createTextNode("has not been prepared for the Playground"))
+        loadingMessage.appendChild(document.createElement("br"))
+        loadingMessage.appendChild(document.createElement("br"))
+        loadingMessage.appendChild(document.createTextNode("Try "))
+        loadingMessage.appendChild(latestReleaseLink)
+        loadingMessage.appendChild(document.createTextNode(" or "))
+        loadingMessage.appendChild(nightlyLink)
         return
       }
+
+      // Allow prod builds to set a custom commit prefix to bust caches
+      const { sandboxRoot, playgroundRoot, playgroundWorker } = getPlaygroundUrls()
 
       // @ts-ignore
       const re: any = global.require
       re.config({
         paths: {
           vs: urlForMonaco,
-          "typescript-sandbox": withPrefix('/js/sandbox'),
-          "typescript-playground": withPrefix('/js/playground'),
+          "typescript-sandbox": sandboxRoot,
+          "typescript-playground": playgroundRoot,
           "unpkg": "https://unpkg.com",
-          "local": "http://localhost:5000"
+          "local": "http://localhost:5000",
         },
         ignoreDuplicateModules: ["vs/editor/editor.main"],
         catchError: true,
@@ -128,16 +187,17 @@ const Play: React.FC<Props> = (props) => {
         }
       });
 
-      re(["vs/editor/editor.main", "vs/language/typescript/tsWorker", "typescript-sandbox/index", "typescript-playground/index"], async (main: typeof import("monaco-editor"), tsWorker: any, sandbox: typeof import("@typescript/sandbox"), playground: typeof import("@typescript/playground")) => {
+      re(["vs/editor/editor.main", "vs/language/typescript/tsWorker", "typescript-sandbox/index", "typescript-playground/index"], async (main: typeof import("monaco-editor"), tsWorker: any, sandbox: typeof import("@typescript/sandbox"), playground: typeof playgroundPackage) => {
         // Importing "vs/language/typescript/tsWorker" will set ts as a global
-        const ts = (global as any).ts
+        const ts = (global as any).ts || tsWorker.typescript
         const isOK = main && ts && sandbox && playground
-
         if (isOK) {
           document.getElementById("loader")!.parentNode?.removeChild(document.getElementById("loader")!)
         } else {
-          console.error("Errr")
+          console.error("Error setting up all the 4 key dependencies")
           console.error("main", !!main, "ts", !!ts, "sandbox", !!sandbox, "playground", !!playground)
+          document.getElementById("loading-message")!.innerText = "Cannot load the Playground in this browser, see logs in console."
+          return
         }
 
         // Set the height of monaco to be either your window height or 600px - whichever is smallest
@@ -146,14 +206,18 @@ const Play: React.FC<Props> = (props) => {
         const height = Math.max(window.innerHeight, 600)
         container.style.height = `${height - Math.round(container.getClientRects()[0].top) - 18}px`
 
+        const extension = (!!params.get("useJavaScript") ? "js" : params.get("filetype") || "ts") as any
+        const workerPath = params.get("multiFile") ? `${document.location.origin + playgroundWorker}?filetype=${extension}` : undefined
+
         // Create the sandbox
         const sandboxEnv = await sandbox.createTypeScriptSandbox({
           text: localStorage.getItem('sandbox-history') || i("play_default_code_sample"),
           compilerOptions: {},
           domID: "monaco-editor-embed",
-          useJavaScript: !!params.get("useJavaScript"),
+          filetype: extension,
           acquireTypes: !localStorage.getItem("disable-ata"),
           supportTwoslashCompilerOptions: true,
+          customTypeScriptWorkerPath: workerPath,
           monacoSettings: {
             fontFamily: "var(--code-font)",
             fontLigatures: true
@@ -166,6 +230,7 @@ const Play: React.FC<Props> = (props) => {
           supportCustomPlugins: true
         }
 
+        sandboxRef.current = sandboxEnv
         playground.setupPlayground(sandboxEnv, main, playgroundConfig, i as any, React)
 
         // Dark mode faff
@@ -180,19 +245,35 @@ const Play: React.FC<Props> = (props) => {
     }
 
     document.body.appendChild(getLoaderScript);
+    window.addEventListener("hashchange", redirectProject)
+    return () => window.removeEventListener("hashchange", redirectProject)
   }, [])
 
 
   return (
     <Layout title={i("head_playground_title")} description={i("head_playground_description")} lang={props.pageContext.lang}>
+      <h1 className="playground-title">{i("head_playground_title")}</h1>
+      <aside className="playground-preview">
+        {i("play_new_playground_description")}{" "}
+        <a
+          href={withPrefix("/play/v2/")}
+          id="new-playground-link"
+          onPointerDown={updateNewPlaygroundLink}
+          onFocus={updateNewPlaygroundLink}
+          onClick={updateNewPlaygroundLink}
+          onContextMenu={updateNewPlaygroundLink}
+        >
+          {i("play_new_playground_link")}
+        </a>
+      </aside>
       {/** This is the top nav, which is outside of the editor  */}
       <nav className="navbar-sub">
         <ul className="nav">
           <li className="name hide-small"><span>Playground</span></li>
 
           <li className="dropdown">
-            <a id="compiler-options-button" href="#" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="compiler-options-dropdown">{i("play_subnav_config")} <span className="caret"></span></a>
-            <ul id="compiler-options-dropdown" className="examples-dropdown" aria-labelledby="compiler-options-button">
+           <a id="compiler-options-button" href="#" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="compiler-options-dropdown" style={{ overflow: "hidden", whiteSpace:"nowrap" }}>{i("play_subnav_config")} <span className="caret"></span></a>
+            <div id="compiler-options-dropdown" className="dropdown-dialog" aria-labelledby="compiler-options-button">
               <h3>{i("play_subnav_config")}</h3>
               <div className="info" id="config-container">
                 <button className="examples-close">{i("play_subnav_examples_close")}</button>
@@ -202,6 +283,7 @@ const Play: React.FC<Props> = (props) => {
                     <span className="select-label">Lang</span>
                     <select id="language-selector">
                       <option>TypeScript</option>
+                      <option>TypeScript Definitions</option>
                       <option>JavaScript</option>
                     </select>
                     <span className="compiler-flag-blurb">{i("play_config_language_blurb")}</span>
@@ -209,23 +291,19 @@ const Play: React.FC<Props> = (props) => {
                 </div>
 
               </div>
-            </ul>
+            </div>
           </li>
 
           <li className="dropdown">
             <a href="#" id="examples-button" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="examples">{i("play_subnav_examples")} <span className="caret"></span></a>
-            <ul className="examples-dropdown" id="examples" aria-labelledby="examples-button">
+            <div className="dropdown-dialog" id="examples" aria-labelledby="examples-button">
               <button className="examples-close" aria-label="Close dropdown" role="button">{i("play_subnav_examples_close")}</button>
               <RenderExamples defaultSection="TypeScript" sections={["JavaScript", "TypeScript"]} examples={props.pageContext.examplesTOC} locale={props.pageContext.lang} />
-            </ul>
+            </div>
           </li>
 
           <li className="dropdown">
-            <a href="#" id="whatisnew-button" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="whatisnew">{i("play_subnav_whatsnew")} <span className="caret"></span></a>
-            <ul className="examples-dropdown" id="whatisnew" aria-labelledby="whatisnew-button">
-              <button role="button" aria-label="Close dropdown" className="examples-close">{i("play_subnav_examples_close")}</button>
-              <RenderExamples defaultSection="4.2" sections={["4.2", "4.1", "4.0", "3.8", "3.7", "Playground"]} examples={props.pageContext.examplesTOC} locale={props.pageContext.lang} />
-            </ul>
+            <a href="#" id="handbook-button" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="examples">{i("play_subnav_handbook")} <span className="caret"></span></a>
           </li>
         </ul>
 
@@ -241,17 +319,18 @@ const Play: React.FC<Props> = (props) => {
         </div>
         <div id="playground-container" style={{ display: "none" }}>
           <div id="editor-container">
+            <div id="story-container" style={{ display: "none" }}></div>
             <div id="editor-toolbar" className="navbar-sub" >
 
               <ul>
                 <li id="versions" className="dropdown" >
-                  <a href="#" data-toggle="dropdown" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="versions-dropdown" id='versions-button'>{i("play_downloading_version")}... <span className="caret" /></a>
+                  <a href="#" data-toggle="dropdown" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="versions-dropdown" id='versions-button' style={{ overflow: "hidden", whiteSpace:"nowrap" }}>{i("play_downloading_version")}... <span className="caret" /></a>
                   <ul className="dropdown-menu versions" id="versions-dropdown" aria-labelledby="versions-button"></ul>
                 </li>
                 <li><a id="run-button" href="#" role="button">{i("play_toolbar_run")}</a></li>
 
                 <li className="dropdown">
-                  <a href="#" id="exports-dropdown" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="export-dropdown-menu">{i("play_toolbar_export")} <span className="caret"></span></a>
+                  <a href="#" id="exports-dropdown" className="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="export-dropdown-menu" style={{ overflow: "hidden", whiteSpace:"nowrap" }}>{i("play_toolbar_export")} <span className="caret"></span></a>
                   <ul className="dropdown-menu" id='export-dropdown-menu' aria-labelledby="whatisnew-button">
                     <li><a href="#" onClick={() => playground.exporter.exportAsTweet()} aria-label={i("play_export_tweet_md")} >{i("play_export_tweet_md")}</a></li>
                     <li role="separator" className="divider"></li>
@@ -261,6 +340,7 @@ const Play: React.FC<Props> = (props) => {
                     < li role="separator" className="divider" ></li>
                     <li><a href="#" onClick={() => playground.exporter.openInTSAST()} aria-label={i("play_export_tsast")}>{i("play_export_tsast")}</a></li>
                     <li><a href="#" onClick={() => playground.exporter.openInBugWorkbench()} aria-label={i("play_export_bugworkbench")}>{i("play_export_bugworkbench")}</a></li>
+                    <li><a href="#" onClick={() => playground.exporter.openInVSCodeDev()} aria-label={i("play_export_vscode_dev_play")}>{i("play_export_vscode_dev_play")}</a></li>
                     <li role="separator" className="divider"></li>
                     <li><a href="#" onClick={() => playground.exporter.openProjectInCodeSandbox()} aria-label={i("play_export_sandbox")} >{i("play_export_sandbox")}</a></li>
                     <li><a href="#" onClick={() => playground.exporter.openProjectInStackBlitz()} aria-label={i("play_export_stackblitz")} >{i("play_export_stackblitz")}</a></li>
@@ -273,7 +353,7 @@ const Play: React.FC<Props> = (props) => {
                 <li><a id="sidebar-toggle" aria-label="Hide Sidebar" href="#">&#x21E5;</a></li>
               </ul>
             </div>
-            { /** This is the div which monaco is added into  **/}
+            { /** This is the div which monaco is added into - careful, lots of changes happen here at runtime **/}
             <div id="monaco-editor-embed" />
           </div>
         </div>
